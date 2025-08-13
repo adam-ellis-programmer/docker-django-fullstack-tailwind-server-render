@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Social Feed{% endblock %}</title>
+    {% load static %}
+    <link href="{% static 'css/output.css' %}" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="flex flex-col h-full bg-gray-50 font-inter">
+    <!-- Navigation -->
+    {% include 'components/nav.html' %}
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      {% block content %}
+      <!--  -->
+      {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    {% include 'components/footer.html' %}
+
+    <script>
+      // Simple mobile menu toggle
+      function toggleMobileMenu() {
+        const menu = document.getElementById('mobile-menu')
+        menu.classList.toggle('hidden')
+      }
+
+      // Global CSRF token function (still needed for logout)
+      function getCSRFToken() {
+        const name = 'csrftoken'
+        let cookieValue = null
+        if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';')
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim()
+            if (cookie.substring(0, name.length + 1) === name + '=') {
+              cookieValue = decodeURIComponent(
+                cookie.substring(name.length + 1)
+              )
+              break
+            }
+          }
+        }
+        return cookieValue
+      }
+
+      // Logout function (the only auth-related JS we need)
+      async function logout() {
+        try {
+          const response = await fetch("{% url 'accounts:signout_api' %}", {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCSRFToken(),
+            },
+          })
+
+          const data = await response.json()
+
+          if (data.success) {
+            // Redirect to home page after logout
+            window.location.href = '/'
+          }
+        } catch (error) {
+          console.error('Error logging out:', error)
+          alert('An error occurred during logout')
+        }
+      }
+
+      // Debug info (remove in production)
+      // console.log('Auth Status (from server):', {{ jwt_authenticated|yesno:"true,false" }});
+    </script>
+  </body>
+</html>

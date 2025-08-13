@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+<!--  -->
+{% block title %}Profile - Social Feed{% endblock %}
+<!--  -->
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <!-- Debug Section -->
+
+  {% if test %}
+  <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+    <h3 class="font-bold text-yellow-800 mb-2">🔍 Debug Info</h3>
+    <div class="text-sm space-y-1">
+      <p><strong>JWT Authenticated:</strong> {{ jwt_authenticated }}</p>
+      <p><strong>JWT User:</strong> {{ jwt_user }}</p>
+      <p><strong>Test User:</strong> {{ test }}</p>
+    </div>
+
+    <p class="bg-slate-600 text-white p-5">hello there ths is a test!</p>
+  </div>
+  {% endif %}
+  <!--  -->
+  {% if jwt_authenticated %}
+  <!-- Profile Content -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <div class="flex items-center space-x-6">
+      <div class="flex-shrink-0">
+        <div
+          class="w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold"
+        >
+          <!-- prettier-ignore -->
+          <span>{{ jwt_user.username.0|upper }}{{ jwt_user.username.1|upper }}</span>
+        </div>
+      </div>
+      <div class="flex-1">
+        <h1 class="text-2xl font-bold text-gray-900">
+          {{ jwt_user_data.full_name }}
+        </h1>
+        <p class="text-gray-600">@{{ jwt_user_data.username }}</p>
+        <p class="text-sm text-gray-500">{{ jwt_user_data.email }}</p>
+      </div>
+      <div class="flex-shrink-0">
+        <button
+          onclick="logout()"
+          class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Stats -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div
+      class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center"
+    >
+      <div class="text-2xl font-bold text-indigo-600">{{ user_data.age }}</div>
+      <div class="text-sm text-gray-500">Years Old</div>
+    </div>
+    <div
+      class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center"
+    >
+      <div class="text-2xl font-bold text-green-600">
+        {{ user_data.member_since }}
+      </div>
+      <div class="text-sm text-gray-500">Member Since</div>
+    </div>
+    <div
+      class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center"
+    >
+      <div class="text-2xl font-bold text-purple-600">Pending</div>
+      <div class="text-sm text-gray-500">Email Status</div>
+    </div>
+  </div>
+
+  <!-- Profile Details -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">
+      Profile Information
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1"
+          >First Name</label
+        >
+        <p class="text-gray-900">
+          {{ jwt_user.first_name|default:"Not provided" }}
+        </p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1"
+          >Last Name</label
+        >
+        <p class="text-gray-900">
+          {{ jwt_user.last_name|default:"Not provided" }}
+        </p>
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+        <p class="text-gray-900">
+          {{ jwt_user.bio|default:"No bio provided yet." }}
+        </p>
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1"
+          >Member Since</label
+        >
+        <p class="text-gray-900">{{ jwt_user.date_joined|date:"F d, Y" }}</p>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <!-- Not Authenticated -->
+  <div class="text-center py-12">
+    <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+      <h2 class="text-xl font-semibold text-red-800 mb-2">Access Denied</h2>
+      <p class="text-red-600 mb-4">
+        You need to be logged in to view this page.
+      </p>
+      <div class="space-x-4">
+        <a
+          href="{% url 'accounts:signin_page' %}"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition-colors inline-block"
+          >Sign In</a
+        >
+        <a
+          href="{% url 'accounts:signup_page' %}"
+          class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition-colors inline-block"
+          >Sign Up</a
+        >
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- <script>
+// console.log('Context Processor Test:');
+// console.log('Authenticated:', {{ jwt_authenticated|yesno:"true,false" }});
+
+async function logout() {
+  try {
+    const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+    const response = await fetch('{% url "accounts:signout_api" %}', {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/json'}
+    });
+    if (response.ok) window.location.href = '{% url "accounts:signin_page" %}';
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
+}
+
+</script> -->
+{% endblock %}

@@ -1,0 +1,59 @@
+services:
+  db: # ← This becomes the hostname
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=feedapp
+      - POSTGRES_USER=feeduser
+      - POSTGRES_PASSWORD=feedpass
+    ports:
+      - '5432:5432'
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - '8000:8000'
+    depends_on:
+      - db
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=postgres://feeduser:feedpass@db:5432/feedapp
+
+  tailwind:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "
+      npm install &&
+      echo 'Building initial CSS...' &&
+      npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css &&
+      echo 'Starting watch mode...' &&
+      npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch --poll
+      "
+    environment:
+      - NODE_ENV=development
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@feedapp.com
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+      - PGADMIN_LISTEN_PORT=80
+    ports:
+      - '5050:80'
+    depends_on:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  postgres_data:
+  pgadmin_data:

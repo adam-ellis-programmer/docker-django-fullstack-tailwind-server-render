@@ -1,0 +1,176 @@
+    <nav class="bg-white shadow-lg sticky top-0 z-50 ">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <!-- Logo/Brand -->
+          <div class="flex-shrink-0">
+            <h1
+              class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"
+            >
+              <a
+                href="{% url 'core:home' %}"
+                class="hover:opacity-80 transition-opacity"
+              >
+                Social Feed
+              </a>
+            </h1>
+          </div>
+
+          <!-- Desktop Navigation -->
+          <div class="hidden md:block">
+            <div class="ml-10 flex items-baseline space-x-8">
+              <a
+                href="{% url 'core:home' %}"
+                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                <!-- prettier-ignore -->
+                {% if jwt_authenticated %}Dashboard{% else %}Home{% endif %}
+              </a>
+              <a
+                href="{% url 'core:about' %}"
+                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                About
+              </a>
+              <a
+                href="{% url 'core:contact' %}"
+                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Contact
+              </a>
+            </div>
+          </div>
+
+          <!-- Authentication Links -->
+          <div class="hidden md:flex items-center space-x-4">
+            {% if jwt_authenticated %}
+            <!-- User is logged in (Server-side rendered) -->
+            <span class="text-gray-700 text-sm">
+              <!-- prettier-ignore -->
+              Welcome,
+              <span class="font-medium"></span>
+                <!-- prettier-ignore -->
+                {{ jwt_user_data.first_name|default:jwt_user_data.username }}
+                </span
+              >
+            </span>
+            <a
+              href="{% url 'accounts:profile_page' %}"
+              class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Profile
+            </a>
+            <button
+              onclick="logout()"
+              class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
+            >
+              Logout
+            </button>
+            {% else %}
+            <!-- User is not logged in (Server-side rendered) -->
+            <a
+              href="{% url 'accounts:signin_page' %}"
+              class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Sign In
+            </a>
+            <a
+              href="{% url 'accounts:signup_page' %}"
+              class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
+            >
+              Sign Up
+            </a>
+            {% endif %}
+          </div>
+
+          <!-- Mobile menu button -->
+          <div class="md:hidden">
+            <button
+              type="button"
+              class="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-indigo-600 hover:bg-gray-100 transition-colors"
+              onclick="toggleMobileMenu()"
+            >
+              <svg
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Navigation Menu -->
+      <div id="mobile-menu" class="md:hidden hidden">
+        <div
+          class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200"
+        >
+          <a
+            href="{% url 'core:home' %}"
+            class="text-gray-700 hover:text-indigo-600 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+          >
+            <!-- prettier-ignore -->
+            {% if jwt_authenticated %}Dashboard{% else %}Home{% endif %}
+          </a>
+          <a
+            href="{% url 'core:about' %}"
+            class="text-gray-700 hover:text-indigo-600 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+          >
+            About
+          </a>
+          <a
+            href="{% url 'core:contact' %}"
+            class="text-gray-700 hover:text-indigo-600 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+          >
+            Contact
+          </a>
+          <div class="border-t border-gray-200 pt-4 pb-3">
+            {% if jwt_authenticated %}
+            <!-- Mobile logged in state (Server-side rendered) -->
+            <div class="px-3 py-2">
+              <span class="text-gray-700 text-sm">
+                Welcome,
+                <span class="font-medium">
+                  <!-- prettier-ignore -->
+                  {{ jwt_user_data.first_name|default:jwt_user_data.username }}</span
+                >
+              </span>
+            </div>
+            <a
+              href="{% url 'accounts:profile_page' %}"
+              class="text-gray-700 hover:text-indigo-600 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+            >
+              Profile
+            </a>
+            <button
+              onclick="logout()"
+              class="bg-red-600 hover:bg-red-700 text-white block px-3 py-2 rounded-md text-base font-medium transition-colors mt-2 w-full text-left"
+            >
+              Logout
+            </button>
+            {% else %}
+            <!-- Mobile logged out state (Server-side rendered) -->
+            <a
+              href="{% url 'accounts:signin_page' %}"
+              class="text-gray-700 hover:text-indigo-600 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+            >
+              Sign In
+            </a>
+            <a
+              href="{% url 'accounts:signup_page' %}"
+              class="bg-indigo-600 hover:bg-indigo-700 text-white block px-3 py-2 rounded-md text-base font-medium transition-colors mt-2"
+            >
+              Sign Up
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </nav>

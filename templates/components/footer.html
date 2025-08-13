@@ -1,0 +1,100 @@
+<!-- Footer -->
+<footer class="bg-white border-t border-gray-200 mt-auto">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div class="col-span-1 md:col-span-2">
+        <h3
+          class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4"
+        >
+          Social Feed
+        </h3>
+        <p class="text-gray-600 max-w-md">
+          Connect with friends, share your thoughts, and discover amazing
+          content from people around the world.
+        </p>
+      </div>
+
+      <div>
+        <h4
+          class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4"
+        >
+          Quick Links
+        </h4>
+        <ul class="space-y-2">
+          <li>
+            <a
+              href="{% url 'core:home' %}"
+              class="text-gray-600 hover:text-indigo-600 transition-colors"
+            >
+              <!-- prettier-ignore -->
+              {% if jwt_authenticated %}Dashboard{% else %}Home{% endif %}</a
+            >
+          </li>
+          <li>
+            <a
+              href="{% url 'core:about' %}"
+              class="text-gray-600 hover:text-indigo-600 transition-colors"
+              >About</a
+            >
+          </li>
+          <li>
+            <a
+              href="{% url 'core:contact' %}"
+              class="text-gray-600 hover:text-indigo-600 transition-colors"
+              >Contact</a
+            >
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <h4
+          class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4"
+        >
+          Account
+        </h4>
+        <ul class="space-y-2">
+          {% if not jwt_authenticated %}
+          <li>
+            <a
+              href="{% url 'accounts:signin_page' %}"
+              class="text-gray-600 hover:text-indigo-600 transition-colors"
+              >Sign In</a
+            >
+          </li>
+          <li>
+            <a
+              href="{% url 'accounts:signup_page' %}"
+              class="text-gray-600 hover:text-indigo-600 transition-colors"
+              >Sign Up</a
+            >
+          </li>
+          {% else %}
+          <li>
+            <a
+              href="{% url 'accounts:profile_page' %}"
+              class="text-gray-600 hover:text-indigo-600 transition-colors"
+              >Profile</a
+            >
+          </li>
+          <li>
+            <a
+              href="#"
+              onclick="logout(); return false;"
+              class="text-gray-600 hover:text-indigo-600 transition-colors"
+              >Logout</a
+            >
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+
+    <div class="border-t border-gray-200 mt-8 pt-8 text-center">
+      <p class="text-gray-500">
+        &copy; 2025 Social Feed. All rights reserved. Built with Django &
+        Tailwind CSS.
+      </p>
+    </div>
+  </div>
+</footer>

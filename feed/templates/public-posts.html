@@ -1,8 +1,248 @@
 {% extends 'base.html' %}
-<!--  -->
-{% block title %}Public Posts - Social Feed{% endblock %}
-<!--  -->
-{% block content %}
 
-<h1 class="text-center text-7xl">posts page</h1>
+{% block title %}Public Posts - Social Feed{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+  <!-- Header Section -->
+  <section class="bg-white shadow-sm border-b sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 py-6">
+      <h1 class="text-center text-3xl font-bold text-gray-800 mb-2">Adventure & Wellness Feed</h1>
+      <p class="text-center text-gray-600">Discover inspiring stories of adventure, travel, and healthy living</p>
+    </div>
+  </section>
+
+  <!-- Main Content Grid -->
+  <section class="max-w-7xl mx-auto px-4 py-8">
+    <div class="grid lg:grid-cols-3 gap-8 ">
+      
+      <!-- Posts Feed -->
+      <div class="lg:col-span-2 border border-rose-500">
+        <div class="space-y-6">
+          {% for post in posts %}
+          <article class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+            <!-- Post Header -->
+            <div class="p-4 flex items-center space-x-3">
+              <img 
+                src="{{ post.avatar }}" 
+                alt="{{ post.author }}" 
+                class="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
+              >
+              <div class="flex-1">
+                <h3 class="font-semibold text-gray-900">{{ post.author }}</h3>
+                <div class="flex items-center space-x-2 text-sm text-gray-500">
+                  <span>{{ post.username }}</span>
+                  <span>•</span>
+                  <span>{{ post.timestamp|timesince }} ago</span>
+                  {% if post.location %}
+                  <span>•</span>
+                  <span class="flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                    </svg>
+                    {{ post.location }}
+                  </span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Post Title -->
+            {% if post.title %}
+            <div class="px-4 pb-3">
+              <h2 class="text-xl font-bold text-gray-900">{{ post.title }}</h2>
+            </div>
+            {% endif %}
+
+            <!-- Post Image -->
+            <div class="relative">
+              <img 
+                src="{{ post.image }}" 
+                alt="{{ post.title }}" 
+                class="w-full h-80 object-cover"
+              >
+              <!-- Image Overlay for better text readability -->
+              <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+            </div>
+
+            <!-- Post Content -->
+            <div class="p-4">
+              <div class="text-gray-800 leading-relaxed mb-4">
+                {{ post.text|linebreaks }}
+              </div>
+
+              <!-- Tags -->
+              {% if post.tags %}
+              <div class="flex flex-wrap gap-2 mb-4">
+                {% for tag in post.tags %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  #{{ tag }}
+                </span>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <!-- Engagement Stats -->
+              <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div class="flex items-center space-x-6">
+                  <!-- Likes -->
+                  <button class="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                    <span class="text-sm font-medium">{{ post.likes }}</span>
+                  </button>
+                  
+                  <!-- Comments -->
+                  <button class="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.418 8-9.877 8A8.977 8.977 0 013 12V5a2 2 0 012-2h14a2 2 0 012 2v7z"></path>
+                    </svg>
+                    <span class="text-sm font-medium">{{ post.comments }}</span>
+                  </button>
+                  
+                  <!-- Shares -->
+                  <button class="flex items-center space-x-1 text-gray-500 hover:text-green-500 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                    </svg>
+                    <span class="text-sm font-medium">{{ post.shares }}</span>
+                  </button>
+                </div>
+                
+                <!-- Save Button -->
+                <button class="text-gray-500 hover:text-yellow-500 transition-colors">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+
+        <!-- Load More Button -->
+        <div class="text-center mt-8">
+          <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200">
+            Load More Posts
+          </button>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="lg:col-span-1">
+        <div class="sticky top-24 space-y-6">
+          
+          <!-- Trending Topics -->
+          <div class="bg-white rounded-xl shadow-md p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Trending Topics</h3>
+            <div class="space-y-3">
+              <a href="#" class="flex items-center justify-between text-sm hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                <span class="text-gray-700">#Adventure</span>
+                <span class="text-gray-500">2.1k posts</span>
+              </a>
+              <a href="#" class="flex items-center justify-between text-sm hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                <span class="text-gray-700">#Fitness</span>
+                <span class="text-gray-500">1.8k posts</span>
+              </a>
+              <a href="#" class="flex items-center justify-between text-sm hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                <span class="text-gray-700">#Travel</span>
+                <span class="text-gray-500">1.5k posts</span>
+              </a>
+              <a href="#" class="flex items-center justify-between text-sm hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                <span class="text-gray-700">#Wellness</span>
+                <span class="text-gray-500">932 posts</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="bg-white rounded-xl shadow-md p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Community Stats</h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <span class="text-gray-600">Total Posts</span>
+                <span class="font-semibold text-gray-900">{{ total_posts }}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-gray-600">Active Users</span>
+                <span class="font-semibold text-gray-900">1.2k</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-gray-600">This Week</span>
+                <span class="font-semibold text-green-600">+127 posts</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Suggested Categories -->
+          <div class="bg-white rounded-xl shadow-md p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Categories</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <button class="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors">
+                🏔️ Adventure
+              </button>
+              <button class="bg-green-100 text-green-800 px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors">
+                💪 Fitness
+              </button>
+              <button class="bg-purple-100 text-purple-800 px-3 py-2 rounded-lg text-sm font-medium hover:bg-purple-200 transition-colors">
+                ✈️ Travel
+              </button>
+              <button class="bg-pink-100 text-pink-800 px-3 py-2 rounded-lg text-sm font-medium hover:bg-pink-200 transition-colors">
+                🧘 Wellness
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- Custom CSS for additional styling -->
+<style>
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar for webkit browsers */
+  .overflow-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .overflow-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  .overflow-scroll::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+
+  .overflow-scroll::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+
+  /* Hover effects for post cards */
+  article:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease-in-out;
+  }
+
+  /* Loading animation for images */
+  img {
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  /* Button hover effects */
+  button:hover {
+    transform: translateY(-1px);
+    transition: transform 0.2s ease-in-out;
+  }
+</style>
 {% endblock %}

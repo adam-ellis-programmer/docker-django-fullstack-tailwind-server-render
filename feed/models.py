@@ -4,8 +4,10 @@ from django.utils import timezone
 
 User = get_user_model()
 
+
 class Post(models.Model):
     # Author relationship
+    # Django's Automatic Field Naming: author_id
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
     
     # Post content

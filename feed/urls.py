@@ -5,5 +5,6 @@ app_name = 'feed'
 
 urlpatterns = [
     # Page views
-    path('posts', views.public_posts, name='public_posts')
+    path('posts', views.public_posts, name='public_posts'),
+    path('my-posts', views.my_posts, name='my-posts'),
 ]

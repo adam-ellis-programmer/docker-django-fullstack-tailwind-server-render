@@ -44,7 +44,7 @@ def verify_jwt_token(token):
 def get_user_from_jwt(request):
     """Extract user from JWT token in cookies"""
     token = request.COOKIES.get('auth_token')
-    print('TOKEN--->',token)
+    # print('TOKEN--->',token)
     if not token:
         return None
 

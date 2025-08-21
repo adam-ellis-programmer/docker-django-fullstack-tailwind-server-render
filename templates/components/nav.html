@@ -49,6 +49,10 @@
           <!-- Authentication Links -->
           <div class="hidden md:flex items-center space-x-4">
             {% if jwt_authenticated %}
+
+          <a href="{% url 'feed:my-posts' %}" class="text-gray-700 capitalize hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+            my posts
+          </a>
             <!-- User is logged in (Server-side rendered) -->
             <span class="text-gray-700 text-sm">
               <!-- prettier-ignore -->
@@ -59,6 +63,7 @@
                 </span
               >
             </span>
+
             <a
               href="{% url 'accounts:profile_page' %}"
               class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"

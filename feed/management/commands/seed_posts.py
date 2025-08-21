@@ -4,8 +4,9 @@ from feed.models import Post
 from feed.data import temp_posts  # Import your existing data
 from datetime import datetime, timedelta
 import random
-
+from pprint import pprint
 User = get_user_model()
+
 
 class Command(BaseCommand):
     help = 'Seed the database with sample posts and users'
@@ -42,6 +43,14 @@ class Command(BaseCommand):
             )
         )
 
+    '''
+    The Key Difference
+    LanguageSyntax Pattern Reading Order 
+
+    Python value_if_true if condition else value_if_falseValue first, then condition 
+    JavaScript condition ? value_if_true : value_if_falseCondition first, then values
+    '''
+
     def create_sample_users(self):
         """Create sample users based on the posts data"""
         # Extract unique authors from temp_posts
@@ -56,7 +65,10 @@ class Command(BaseCommand):
                     'last_name': ' '.join(post_data['author'].split()[1:]) if len(post_data['author'].split()) > 1 else '',
                     'bio': f"Adventure and fitness enthusiast from {post_data.get('location', 'Unknown')}"
                 }
-
+        pprint(unique_authors)
+        # ============================
+        pprint(unique_authors.values())
+        # ============================
         # Create users
         for user_data in unique_authors.values():
             user, created = User.objects.get_or_create(

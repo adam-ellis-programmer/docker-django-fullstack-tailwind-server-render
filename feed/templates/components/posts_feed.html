@@ -1,15 +1,24 @@
-<!-- Posts Feed Component -->
-<div class="lg:col-span-2">
-  <div class="space-y-6">
+<!-- Posts Feed Component with Infinite Scroll -->
+<div
+  class="lg:col-span-2"
+  data-infinite-scroll="true"
+  data-next-page="{{ next_page_number|default:'null' }}"
+  data-has-next="{{ has_next|yesno:'true,false' }}"
+  data-endpoint="{% url 'feed:load_more_posts' %}"
+>
+  <!-- Posts Container -->
+  <div id="posts-container" class="space-y-6">
     {% for post in posts %}
-    <article class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+    <article
+      class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden"
+    >
       <!-- Post Header -->
       <div class="p-4 flex items-center space-x-3">
-        <img 
-          src="{{ post.avatar }}" 
-          alt="{{ post.author }}" 
+        <img
+          src="{{ post.author.avatar }}"
+          alt="{{ post.author }}"
           class="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
-        >
+        />
         <div class="flex-1">
           <h3 class="font-semibold text-gray-900">{{ post.author }}</h3>
           <div class="flex items-center space-x-2 text-sm text-gray-500">
@@ -20,7 +29,11 @@
             <span>|</span>
             <span class="flex items-center">
               <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                <path
+                  fill-rule="evenodd"
+                  d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                  clip-rule="evenodd"
+                ></path>
               </svg>
               {{ post.location }}
             </span>
@@ -38,13 +51,15 @@
 
       <!-- Post Image -->
       <div class="relative">
-        <img 
-          src="{{ post.image }}" 
-          alt="{{ post.title }}" 
+        <img
+          src="{{ post.image }}"
+          alt="{{ post.title }}"
           class="w-full h-80 object-cover"
-        >
+        />
         <!-- Image Overlay for better text readability -->
-        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+        <div
+          class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"
+        ></div>
       </div>
 
       <!-- Post Content -->
@@ -57,7 +72,9 @@
         {% if post.tags %}
         <div class="flex flex-wrap gap-2 mb-4">
           {% for tag in post.tags %}
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+          <span
+            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+          >
             #{{ tag }}
           </span>
           {% endfor %}
@@ -65,37 +82,85 @@
         {% endif %}
 
         <!-- Engagement Stats -->
-        <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+        <div
+          class="flex items-center justify-between pt-4 border-t border-gray-100"
+        >
           <div class="flex items-center space-x-6">
             <!-- Likes -->
-            <button class="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            <button
+              class="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                ></path>
               </svg>
               <span class="text-sm font-medium">{{ post.likes }}</span>
             </button>
-            
+
             <!-- Comments -->
-            <button class="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition-colors">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.418 8-9.877 8A8.977 8.977 0 013 12V5a2 2 0 012-2h14a2 2 0 012 2v7z"></path>
+            <button
+              class="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition-colors"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.418 8-9.877 8A8.977 8.977 0 013 12V5a2 2 0 012-2h14a2 2 0 012 2v7z"
+                ></path>
               </svg>
               <span class="text-sm font-medium">{{ post.comments }}</span>
             </button>
-            
+
             <!-- Shares -->
-            <button class="flex items-center space-x-1 text-gray-500 hover:text-green-500 transition-colors">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+            <button
+              class="flex items-center space-x-1 text-gray-500 hover:text-green-500 transition-colors"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                ></path>
               </svg>
               <span class="text-sm font-medium">{{ post.shares }}</span>
             </button>
           </div>
-          
+
           <!-- Save Button -->
           <button class="text-gray-500 hover:text-yellow-500 transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+              ></path>
             </svg>
           </button>
         </div>
@@ -104,9 +169,48 @@
     {% endfor %}
   </div>
 
-  <!-- Load More Button -->
-  <div class="text-center mt-8">
-    <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200">
+  <!-- Infinite Scroll Elements -->
+
+  <!-- Loading Indicator -->
+  <div id="loading-indicator" class="text-center py-8 hidden">
+    <div class="inline-flex items-center space-x-2">
+      <div
+        class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"
+      ></div>
+      <span class="text-gray-600">Loading more posts...</span>
+    </div>
+  </div>
+
+  <!-- Scroll Trigger (invisible element that triggers loading) -->
+  <div id="scroll-trigger" class="h-10 w-full"></div>
+
+  <!-- End of Posts Message -->
+  <div id="end-of-posts" class="text-center py-8 hidden">
+    <div class="text-gray-500">
+      <svg
+        class="w-12 h-12 mx-auto mb-4 text-gray-300"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        ></path>
+      </svg>
+      <p class="text-lg font-medium text-gray-600">You've reached the end!</p>
+      <p class="text-sm text-gray-500 mt-1">No more posts to load</p>
+    </div>
+  </div>
+
+  <!-- Fallback Load More Button (for browsers without Intersection Observer) -->
+  <div id="load-more-button" class="text-center mt-8" style="display: none">
+    <button
+      onclick="loadMorePosts()"
+      class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200"
+    >
       Load More Posts
     </button>
   </div>

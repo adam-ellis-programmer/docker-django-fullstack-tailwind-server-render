@@ -63,7 +63,8 @@ class Command(BaseCommand):
                     'email': f"{post_data['username'].replace('@', '')}@example.com",
                     'first_name': post_data['author'].split()[0],
                     'last_name': ' '.join(post_data['author'].split()[1:]) if len(post_data['author'].split()) > 1 else '',
-                    'bio': f"Adventure and fitness enthusiast from {post_data.get('location', 'Unknown')}"
+                    'bio': f"Adventure and fitness enthusiast from {post_data.get('location', 'Unknown')}",
+                    'avatar': post_data['avatar']
                 }
         pprint(unique_authors)
         # ============================

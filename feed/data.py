@@ -4,7 +4,7 @@ temp_posts = [
         'id': 1,
         'author': 'Sarah Adventure',
         'username': '@sarahadventure',
-        'avatar': 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+        'avatar': 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
         'title': 'Sunrise Hike at Mount Washington',
         'text': 'Started our hike at 4 AM to catch this incredible sunrise! The 6-mile trek was challenging but absolutely worth it. Nothing beats the feeling of accomplishment when you reach the summit. #MountainLife #Adventure #Hiking',
         'image': 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop',

@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 <!--  -->
-{% block title %}Public Posts - Social Feed{% endblock %}
+{% csrf_token %}
 <!--  -->
+{% block title %}Public Posts - Social Feed{% endblock %}
+
 {% block content %}
 <div class="min-h-screen bg-gray-50">
   <!-- Header Section -->
@@ -13,21 +15,27 @@
       <p class="text-center text-gray-600">
         Discover inspiring stories of adventure, travel, and healthy living
       </p>
+      {% if total_posts > 0 %}
+      <p class="text-center text-sm text-gray-500 mt-2">
+        {{ total_posts }} posts available
+      </p>
+      {% endif %}
     </div>
   </section>
 
   <!-- Main Content Grid -->
   <section class="max-w-7xl mx-auto px-4 py-8">
     <div class="grid lg:grid-cols-3 gap-8">
-      <!-- Posts Feed -->
+      <!-- Posts Feed with Infinite Scroll -->
       {% include 'components/posts_feed.html' %}
+      
       <!-- Sidebar -->
       {% include 'components/side_bar.html' %}
     </div>
   </section>
 </div>
 
-<!-- Custom CSS for additional styling -->
+<!-- Custom CSS for infinite scroll styling -->
 <style>
   /* Smooth scrolling */
   html {
@@ -60,14 +68,49 @@
   }
 
   /* Loading animation for images */
-  img {
+  .loading-image {
     transition: opacity 0.3s ease-in-out;
+  }
+
+  .loading-image:not([src]) {
+    opacity: 0.5;
   }
 
   /* Button hover effects */
   button:hover {
     transform: translateY(-1px);
     transition: transform 0.2s ease-in-out;
+  }
+
+  /* Smooth animation for new posts */
+  .post-item {
+    animation: fadeInUp 0.3s ease-out forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Loading indicator pulse animation */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* Scroll trigger element */
+  #scroll-trigger {
+    pointer-events: none;
   }
 </style>
 {% endblock %}

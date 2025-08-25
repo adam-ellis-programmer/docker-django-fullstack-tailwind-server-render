@@ -19,6 +19,7 @@
           alt="{{ post.author }}"
           class="w-12 h-12 rounded-full object-cover border-2 border-gray-100"
         />
+
         <div class="flex-1">
           <h3 class="font-semibold text-gray-900">{{ post.author }}</h3>
           <div class="flex items-center space-x-2 text-sm text-gray-500">
@@ -50,7 +51,9 @@
       {% endif %}
 
       <!-- Post Image -->
+       
       <div class="relative">
+        <p>first load </p>
         <img
           src="{{ post.image }}"
           alt="{{ post.title }}"
@@ -170,7 +173,6 @@
   </div>
 
   <!-- Infinite Scroll Elements -->
-
   <!-- Loading Indicator -->
   <div id="loading-indicator" class="text-center py-8 hidden">
     <div class="inline-flex items-center space-x-2">

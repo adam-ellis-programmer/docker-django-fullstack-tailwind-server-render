@@ -3,7 +3,7 @@
 {% csrf_token %}
 <!--  -->
 {% block title %}Public Posts - Social Feed{% endblock %}
-
+<!--  -->
 {% block content %}
 <div class="min-h-screen bg-gray-50/90">
   <!-- Header Section -->
@@ -28,7 +28,7 @@
     <div class="grid lg:grid-cols-3 gap-8">
       <!-- Posts Feed with Infinite Scroll -->
       {% include 'components/posts_feed.html' %}
-      
+
       <!-- Sidebar -->
       {% include 'components/side_bar.html' %}
     </div>
@@ -100,7 +100,8 @@
 
   /* Loading indicator pulse animation */
   @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
     }
     50% {

@@ -12,6 +12,7 @@ from pprint import pprint
 # PUBLIC POSTS WITH INFINITE SCROLL
 # ===============================================================================
 
+
 def public_posts(request):
     """Main public posts page"""
     jwt_user = get_user_from_jwt(request)
@@ -49,13 +50,14 @@ def load_more_posts(request):
     else:
         posts = Post.objects.none()
 
+    # The Paginator uses SQL LIMIT and OFFSET:
     paginator = Paginator(posts, 3)  # Changed from 12 to 3
     page = paginator.get_page(page_number)
 
     # Render posts HTML
     posts_html = render_to_string('components/posts_list.html', {
-        'posts': page,
-        'jwt_user': jwt_user
+        'posts': page,  # This contains exactly 3 Post objects
+        'jwt_user': jwt_user  # This is actual User object
     })
 
     return JsonResponse({

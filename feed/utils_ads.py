@@ -144,7 +144,7 @@ def mix_posts_with_ads(posts, user=None, ads_frequency=10):
                 ads_inserted += 1
                 logger.info(
                     f"✓ Inserted ad {ad.id} at position {len(mixed_items)}")
-
+                
                 # Track impression
                 track_ad_impression(ad)
             else:

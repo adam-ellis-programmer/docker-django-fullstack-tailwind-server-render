@@ -259,3 +259,26 @@ def get_user_interest_dict(user, min_score=1.0):
     ).values_list('interest', 'score')
 
     return dict(interests)
+
+# ========================================================================
+# Post Impression MODEL -- Smart Ad Targeting
+# ========================================================================
+# The on_delete=models.CASCADE means that if a User or Post is deleted, 
+# their related PostImpression records will also be deleted automatically.
+class PostImpression(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    impression_time = models.DateTimeField(auto_now_add=True)
+    view_duration = models.FloatField(default=0.0, help_text='Duration in seconds')
+    scroll_depth = models.FloatField(default=0.0, help_text='Percentage of post visible (0.0-1.0)')
+    interaction_type = models.CharField(max_length=50, default='view', help_text='view, click, like, etc.')
+
+    class Meta:
+        db_table = 'post_impressions'
+        unique_together = ['user', 'post']  # Prevent duplicate impressions
+        ordering = ['-impression_time']
+        verbose_name = 'Post Impression'
+        verbose_name_plural = 'Post Impressions'
+
+    def __str__(self):
+        return f"{self.user.username} viewed {self.post.title} for {self.view_duration}s"

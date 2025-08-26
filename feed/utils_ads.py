@@ -8,6 +8,9 @@ logger = logging.getLogger(__name__)
 
 
 def get_targeted_ad(user=None, user_interests=None):
+    # --------------------
+    # helper function
+    # --------------------
     """
     Get a targeted advertisement based on user interests
 
@@ -70,6 +73,9 @@ def get_targeted_ad(user=None, user_interests=None):
 
 
 def get_user_interests(user, min_score=1.0, limit=10):
+    # --------------------
+    # helper function
+    # --------------------
     """
     Get user's top interests for ad targeting
 
@@ -91,6 +97,9 @@ def get_user_interests(user, min_score=1.0, limit=10):
 
 
 def mix_posts_with_ads(posts, user=None, ads_frequency=10):
+    # --------------------
+    # imported into views
+    # --------------------
     """
     Mix posts with advertisements at specified frequency
 
@@ -152,7 +161,7 @@ def mix_posts_with_ads(posts, user=None, ads_frequency=10):
 def track_ad_impression(ad):
     """
     Track ad impression for analytics
-
+ 
     Args:
         ad: Advertisement object
     """

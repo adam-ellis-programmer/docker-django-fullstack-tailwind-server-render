@@ -3,7 +3,7 @@ from django.db.models import Count, Sum, Avg
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
-from feed.models import Post
+from feed.models import Post, Advertisement
 from accounts.utils import get_user_from_jwt
 from django.contrib import messages
 from pprint import pprint

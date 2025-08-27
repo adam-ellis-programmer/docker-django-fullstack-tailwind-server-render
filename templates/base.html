@@ -12,15 +12,19 @@
     />
   </head>
   <body class="flex flex-col h-full bg-gray-50 font-inter relative">
-    
     <!-- Reusable Modal Container -->
     <div id="modal-overlay" class="fixed inset-0 z-50 hidden">
       <!-- Backdrop -->
-      <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
-      
+      <div
+        class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+      ></div>
+
       <!-- Modal Content -->
       <div class="fixed inset-0 flex items-center justify-center p-4">
-        <div id="modal-content" class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-hidden">
+        <div
+          id="modal-content"
+          class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-hidden"
+        >
           <!-- ------------------------------------- -->
           <!-- Dynamic content will be inserted here -->
           <!-- ------------------------------------- -->
@@ -91,8 +95,12 @@
       }
 
       // Make CSRF function globally available
-      window.getCSRFToken = getCSRFToken;
+      window.getCSRFToken = getCSRFToken
     </script>
     <script type="module" src="{% static 'js/index.js' %}"></script>
+    <script
+      src="https://kit.fontawesome.com/c16c247401.js"
+      crossorigin="anonymous"
+    ></script>
   </body>
 </html>

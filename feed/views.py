@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.contrib import messages
-from feed.models import Post, Advertisement
+from feed.models import Post, Advertisement, PostLike, process_user_interaction
 from feed.utils_ads import track_ad_click
 from feed.utils_posts import\
     get_smart_posts_queryset, \
@@ -39,6 +39,32 @@ def public_posts(request):
     mixed_items = mix_smart_posts_with_ads(
         first_page, jwt_user, posts_per_page=10, ads_frequency=10)
 
+    # ADD THE CODE HERE - right after mixed_items is created
+    # Add user like status to each post
+    if jwt_user:
+        # Get all post IDs that the user has liked
+        user_liked_posts = set(PostLike.objects.filter(
+            user=jwt_user
+        ).values_list('post_id', flat=True))
+
+        logger.info(f"User {jwt_user.id} has liked posts: {user_liked_posts}")
+
+        # ----- ADDS A FIELD ON THE FLY
+        # Add user_has_liked attribute to each item
+        for item in mixed_items:
+            # mixed_items list contains two different types of objects (post and advert)
+            if hasattr(item, 'id') and not hasattr(item, 'type'):  # It's a post, not an ad
+                item.user_has_liked = item.id in user_liked_posts
+                logger.info(
+                    f"Post {item.id} - user_has_liked: {item.user_has_liked}")
+            else:
+                item.user_has_liked = False
+    else:
+        logger.info("No JWT user - setting all user_has_liked to False")
+        # User not logged in
+        for item in mixed_items:
+            item.user_has_liked = False
+
     context = {
         'items': mixed_items,
         'total_posts': total_posts,
@@ -69,6 +95,21 @@ def load_more_posts(request):
     # Mix posts with advertisements
     mixed_items = mix_smart_posts_with_ads(
         page, jwt_user, posts_per_page=10, ads_frequency=10)
+
+    # ADD USER LIKE STATUS - Same as in public_posts view
+    if jwt_user:
+        user_liked_posts = set(PostLike.objects.filter(
+            user=jwt_user
+        ).values_list('post_id', flat=True))
+
+        for item in mixed_items:
+            if hasattr(item, 'id') and not hasattr(item, 'type'):  # It's a post, not an ad
+                item.user_has_liked = item.id in user_liked_posts
+            else:
+                item.user_has_liked = False
+    else:
+        for item in mixed_items:
+            item.user_has_liked = False
 
     # Render mixed content HTML
     posts_html = render_to_string('components/posts_list.html', {
@@ -222,3 +263,71 @@ def debug_targeting_view(request):
         'targeting_stats': stats,
         'post_matching_debug': debug_info
     }, indent=2)  # Pretty print for debugging
+
+
+# ==========================================================================
+# TOGGLE LIKE BUTTON
+# ==========================================================================
+
+def toggle_like(request):
+    """AJAX endpoint to toggle post likes with PostLike tracking"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    # Get user from JWT token
+    jwt_user = get_user_from_jwt(request)
+    if not jwt_user:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+
+    try:
+        data = json.loads(request.body)
+        post_id = data.get('post_id')
+
+        if not post_id:
+            return JsonResponse({'error': 'Missing post_id'}, status=400)
+
+        # Get the post
+        try:
+            post = Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return JsonResponse({'error': 'Post not found'}, status=404)
+
+        # Check if user already liked this post
+        existing_like = PostLike.objects.filter(user=jwt_user, post=post).first()
+
+        if existing_like:
+            # User already liked - so unlike it
+            existing_like.delete()
+            post.likes = max(0, post.likes - 1)  # Prevent negative likes
+            post.save()
+
+            # Update user interests (unlike action)
+            process_user_interaction(jwt_user, post, 'unlike')
+
+            return JsonResponse({
+                'success': True,
+                'action': 'unliked',
+                'new_like_count': post.likes,
+                'user_has_liked': False
+            })
+        else:
+            # User hasn't liked - so like it
+            PostLike.objects.create(user=jwt_user, post=post)
+            post.likes += 1
+            post.save()
+
+            # Update user interests (like action)
+            process_user_interaction(jwt_user, post, 'like')
+
+            return JsonResponse({
+                'success': True,
+                'action': 'liked',
+                'new_like_count': post.likes,
+                'user_has_liked': True
+            })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        logger.error(f"Error in toggle_like: {e}")
+        return JsonResponse({'error': 'Internal server error'}, status=500)

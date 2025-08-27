@@ -263,15 +263,20 @@ def get_user_interest_dict(user, min_score=1.0):
 # ========================================================================
 # Post Impression MODEL -- Smart Ad Targeting
 # ========================================================================
-# The on_delete=models.CASCADE means that if a User or Post is deleted, 
+# The on_delete=models.CASCADE means that if a User or Post is deleted,
 # their related PostImpression records will also be deleted automatically.
+
+
 class PostImpression(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     impression_time = models.DateTimeField(auto_now_add=True)
-    view_duration = models.FloatField(default=0.0, help_text='Duration in seconds')
-    scroll_depth = models.FloatField(default=0.0, help_text='Percentage of post visible (0.0-1.0)')
-    interaction_type = models.CharField(max_length=50, default='view', help_text='view, click, like, etc.')
+    view_duration = models.FloatField(
+        default=0.0, help_text='Duration in seconds')
+    scroll_depth = models.FloatField(
+        default=0.0, help_text='Percentage of post visible (0.0-1.0)')
+    interaction_type = models.CharField(
+        max_length=50, default='view', help_text='view, click, like, etc.')
 
     class Meta:
         db_table = 'post_impressions'
@@ -282,3 +287,46 @@ class PostImpression(models.Model):
 
     def __str__(self):
         return f"{self.user.username} viewed {self.post.title} for {self.view_duration}s"
+
+# ========================================================================
+# POST LIKE MODEL -- Track User-Post Like Relationships
+# ========================================================================
+
+
+# post_like.user - gives you the full User object
+# post_like.user_id - gives you just the integer ID
+# post_like.user.username - access user attributes through the relationship
+# The related_name='post_likes' allows reverse lookups:
+    # user.post_likes.all() - get all PostLike objects for this user
+    # user.post_likes.count() - count how many posts this user has liked
+class PostLike(models.Model):
+    """Track which users have liked which posts"""
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='post_likes'
+    )
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='user_likes'
+    )
+
+    # Timestamp for analytics
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'post_likes'
+        unique_together = ['user', 'post']  # Prevent duplicate likes
+        ordering = ['-created_at']
+        verbose_name = 'Post Like'
+        verbose_name_plural = 'Post Likes'
+        indexes = [
+            models.Index(fields=['user']),  # Fast lookup of user's likes
+            models.Index(fields=['post']),  # Fast lookup of post's likes
+            models.Index(fields=['created_at']),  # Analytics queries
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} likes {self.post.title}"

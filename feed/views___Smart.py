@@ -21,21 +21,28 @@ logger = logging.getLogger(__name__)
 
 
 def public_posts(request):
-    """Main public posts page showing ALL posts with integrated advertisements"""
+    """Main public posts page with smart post filtering and integrated advertisements"""
     jwt_user = get_user_from_jwt(request)
     logger.info(f"Public posts request from user: {jwt_user}")
 
-    # Get ALL posts instead of smart filtering
-    posts = Post.objects.select_related('author').order_by('-created_at')
+    # Get smart posts based on user interests
+    if jwt_user:
+        posts = get_smart_posts_queryset(jwt_user, fallback_limit=0.3)
+
+        # Get targeting stats for debugging/analytics
+        targeting_stats = get_post_targeting_stats(jwt_user)
+        logger.info(f"Post targeting stats: {targeting_stats}")
+    else:
+        posts = Post.objects.none()
 
     total_posts = posts.count()
-    logger.info(f"Total posts available: {total_posts}")
+    logger.info(f"Total smart posts available: {total_posts}")
 
-    # Get first page of posts
+    # Get first page of smart posts
     paginator = Paginator(posts, 10)
     first_page = paginator.get_page(1)
 
-    # Mix posts with advertisements
+    # Mix smart posts with advertisements
     mixed_items = mix_smart_posts_with_ads(
         first_page, jwt_user, posts_per_page=10, ads_frequency=10)
 
@@ -45,28 +52,33 @@ def public_posts(request):
         'jwt_user': jwt_user,
         'has_next': first_page.has_next(),
         'next_page_number': 2 if first_page.has_next() else None,
+        # Optional: for frontend display
+        'targeting_stats': targeting_stats if jwt_user else None,
     }
 
     return render(request, 'public-posts.html', context)
 
 
 def load_more_posts(request):
-    """AJAX endpoint for loading more posts (ALL posts, not filtered)"""
+    """AJAX endpoint for loading more smart posts with ads"""
     if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'error': 'Invalid request'}, status=400)
 
     jwt_user = get_user_from_jwt(request)
     page_number = request.GET.get('page', 1)
 
-    logger.info(f"Load more posts: user={jwt_user}, page={page_number}")
+    logger.info(f"Load more smart posts: user={jwt_user}, page={page_number}")
 
-    # Get ALL posts instead of smart filtering
-    posts = Post.objects.select_related('author').order_by('-created_at')
+    # Get smart posts based on user interests
+    if jwt_user:
+        posts = get_smart_posts_queryset(jwt_user, fallback_limit=0.3)
+    else:
+        posts = Post.objects.none()
 
     paginator = Paginator(posts, 10)
     page = paginator.get_page(page_number)
 
-    # Mix posts with advertisements
+    # Mix smart posts with advertisements
     mixed_items = mix_smart_posts_with_ads(
         page, jwt_user, posts_per_page=10, ads_frequency=10)
 

@@ -11,7 +11,24 @@
       rel="stylesheet"
     />
   </head>
-  <body class="flex flex-col h-full bg-gray-50 font-inter">
+  <body class="flex flex-col h-full bg-gray-50 font-inter relative">
+    
+    <!-- Reusable Modal Container -->
+    <div id="modal-overlay" class="fixed inset-0 z-50 hidden">
+      <!-- Backdrop -->
+      <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+      
+      <!-- Modal Content -->
+      <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-hidden">
+          <!-- ------------------------------------- -->
+          <!-- Dynamic content will be inserted here -->
+          <!-- ------------------------------------- -->
+        </div>
+      </div>
+    </div>
+    <!-- End of modal -->
+
     <!-- Navigation -->
     {% include 'components/nav.html' %}
 
@@ -32,7 +49,29 @@
         menu.classList.toggle('hidden')
       }
 
-      // Global CSRF token function (still needed for logout)
+      // Logout function (the only auth-related JS we need)
+      async function logout() {
+        try {
+          const response = await fetch("{% url 'accounts:signout_api' %}", {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCSRFToken(),
+            },
+          })
+
+          const data = await response.json()
+
+          if (data.success) {
+            window.location.href = '/'
+          }
+        } catch (error) {
+          console.error('Error logging out:', error)
+          alert('An error occurred during logout')
+        }
+      }
+
+      // Global CSRF token function (needed by multiple modules)
       function getCSRFToken() {
         const name = 'csrftoken'
         let cookieValue = null
@@ -51,31 +90,9 @@
         return cookieValue
       }
 
-      // Logout function (the only auth-related JS we need)
-      async function logout() {
-        try {
-          const response = await fetch("{% url 'accounts:signout_api' %}", {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': getCSRFToken(),
-            },
-          })
-
-          const data = await response.json()
-
-          if (data.success) {
-            // Redirect to home page after logout
-            window.location.href = '/'
-          }
-        } catch (error) {
-          console.error('Error logging out:', error)
-          alert('An error occurred during logout')
-        }
-      }
-
-      // Debug info (remove in production)
-      // console.log('Auth Status (from server):', {{ jwt_authenticated|yesno:"true,false" }});
+      // Make CSRF function globally available
+      window.getCSRFToken = getCSRFToken;
     </script>
+    <script type="module" src="{% static 'js/index.js' %}"></script>
   </body>
 </html>

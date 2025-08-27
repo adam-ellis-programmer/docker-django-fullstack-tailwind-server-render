@@ -152,3 +152,22 @@ if DEBUG:
     INSTALLED_APPS.append('django_browser_reload')
     MIDDLEWARE.append(
         'django_browser_reload.middleware.BrowserReloadMiddleware')
+
+
+# settings.py
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'feed.views': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}

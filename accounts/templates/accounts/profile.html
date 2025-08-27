@@ -113,6 +113,11 @@
         >
         <p class="text-gray-900">{{ jwt_user.date_joined|date:"F d, Y" }}</p>
       </div>
+      <div class="md:col-span-2">
+        <!-- prettier-ignore -->
+        <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+        <p class="text-gray-900"> <span class="text-rose-600 ">#</span> {{ jwt_user.id}}</p>
+      </div>
     </div>
   </div>
   {% else %}

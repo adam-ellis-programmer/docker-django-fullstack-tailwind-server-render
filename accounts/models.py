@@ -15,8 +15,10 @@ class AppUser(AbstractUser):
     bio = models.TextField(max_length=500, blank=True,
                            help_text='Tell us about yourself')
     birth_date = models.DateField(null=True, blank=True)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    # avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    avatar = models.URLField(max_length=500, null=True, blank=True)
     phone_number = models.CharField(max_length=15, blank=True)
+
 
     # Profile settings
     is_email_verified = models.BooleanField(default=False)

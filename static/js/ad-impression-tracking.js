@@ -147,7 +147,7 @@ class AdImpressionTracker {
 
   pauseAllVisibleAds() {
     const currentTime = Date.now()
-    
+
     this.observedAds.forEach((adData, adId) => {
       if (adData.isVisible && adData.startTime && !adData.updateSent) {
         // Calculate and add the current session duration
@@ -160,14 +160,16 @@ class AdImpressionTracker {
           this.updateImpressionDuration(adId, adData)
         }
 
-        console.log(`Paused ad ${adId} after ${sessionDuration}ms session (${adData.totalVisibleTime}ms total)`)
+        console.log(
+          `Paused ad ${adId} after ${sessionDuration}ms session (${adData.totalVisibleTime}ms total)`
+        )
       }
     })
   }
 
   resumeVisibleAds() {
     const currentTime = Date.now()
-    
+
     this.observedAds.forEach((adData, adId) => {
       if (adData.isVisible && adData.pausedTime) {
         // Resume timing from current time
@@ -233,6 +235,7 @@ class AdImpressionTracker {
       const data = await response.json()
 
       if (data.success) {
+        // adData.updateSent = true // ← Prevents further updates
         // Don't mark as sent yet - allow for future updates if user returns
         console.log(
           `Updated impression duration for ad ${adId}: ${durationSeconds}s`

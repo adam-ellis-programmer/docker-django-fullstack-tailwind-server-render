@@ -1,8 +1,14 @@
+import logging
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 User = get_user_model()
+
+
+logger = logging.getLogger(__name__)
+
+
 # docker-compose exec web python manage.py makemigrations feed
 # docker-compose exec web python manage.py migrate
 
@@ -330,3 +336,204 @@ class PostLike(models.Model):
 
     def __str__(self):
         return f"{self.user.username} likes {self.post.title}"
+
+
+# ========================================================================
+# ADVERT TRACKIGN -- Track User-Post Like Relationships
+# ========================================================================
+
+# Add this to your feed/models.py file after the existing models
+
+class AdImpression(models.Model):
+    """Track ad impressions for analytics"""
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ad_impressions',
+        null=True,
+        blank=True  # Allow anonymous users
+    )
+    advertisement = models.ForeignKey(
+        Advertisement,
+        on_delete=models.CASCADE,
+        related_name='impressions_tracked'
+    )
+
+    # Viewing metrics
+    view_duration = models.FloatField(
+        default=0.0,
+        help_text='How long user viewed ad in seconds'
+    )
+    viewport_percentage = models.FloatField(
+        default=0.0,
+        help_text='Percentage of ad visible (0.0-1.0)'
+    )
+
+    # Session and device info
+    session_key = models.CharField(
+        max_length=40,
+        null=True,
+        blank=True,
+        help_text='Session key for anonymous users'
+    )
+    user_agent = models.TextField(
+        null=True,
+        blank=True,
+        help_text='User agent string'
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        help_text='User IP address'
+    )
+
+    # Timing
+    impression_start = models.DateTimeField(auto_now_add=True)
+    impression_end = models.DateTimeField(null=True, blank=True)
+
+    # Flags
+    is_valid_impression = models.BooleanField(
+        default=True,
+        help_text='Whether this counts as a valid impression (>= 1 second view)'
+    )
+    counted_in_analytics = models.BooleanField(
+        default=False,
+        help_text='Whether this impression has been counted in ad analytics'
+    )
+
+    class Meta:
+        db_table = 'ad_impressions'
+        ordering = ['-impression_start']
+        verbose_name = 'Ad Impression'
+        verbose_name_plural = 'Ad Impressions'
+        indexes = [
+            models.Index(fields=['user', 'advertisement']),
+            models.Index(fields=['session_key', 'advertisement']),
+            models.Index(fields=['impression_start']),
+            models.Index(fields=['is_valid_impression']),
+        ]
+        # Prevent duplicate impressions within short timeframe
+        # constraints = [
+        #     models.UniqueConstraint(
+        #         fields=['user', 'advertisement', 'impression_start'],
+        #         name='unique_user_ad_impression_per_minute',
+        #         condition=models.Q(impression_start__isnull=False)
+        #     )
+        # ]
+
+    def __str__(self):
+        user_identifier = self.user.username if self.user else f"Session: {self.session_key}"
+        return f"{user_identifier} viewed {self.advertisement.id} for {self.view_duration}s"
+
+    @property
+    def total_view_time(self):
+        """Calculate total view time"""
+        if self.impression_end:
+            return (self.impression_end - self.impression_start).total_seconds()
+        return self.view_duration
+
+    def mark_as_ended(self, duration_seconds=None):
+        """Mark impression as ended"""
+        self.impression_end = timezone.now()
+        if duration_seconds is not None:
+            self.view_duration = duration_seconds
+
+        # Determine if this is a valid impression (>= 1 second)
+        self.is_valid_impression = self.view_duration >= 1.0
+        self.save()
+
+
+# Utility functions for ad impression tracking
+
+def create_ad_impression(advertisement, user=None, request=None):
+    """
+    Create a new ad impression record
+    """
+    try:
+        # Get session key and IP for anonymous users
+        session_key = None
+        ip_address = None
+        user_agent = None
+
+        if request:
+            session_key = request.session.session_key or request.session.create()
+            ip_address = get_client_ip(request)
+            user_agent = request.META.get('HTTP_USER_AGENT', '')
+
+        # TEMPORARILY COMMENTED OUT FOR TESTING
+        # # Check for recent duplicate impression (within last minute)
+        # recent_cutoff = timezone.now() - timezone.timedelta(minutes=1)
+        #
+        # duplicate_check = AdImpression.objects.filter(
+        #     advertisement=advertisement,
+        #     impression_start__gte=recent_cutoff
+        # )
+        #
+        # if user:
+        #     duplicate_check = duplicate_check.filter(user=user)
+        # elif session_key:
+        #     duplicate_check = duplicate_check.filter(session_key=session_key)
+        #
+        # if duplicate_check.exists():
+        #     logger.info(
+        #         f"Duplicate ad impression prevented for ad {advertisement.id}")
+        #     return None
+
+        # Create new impression
+        impression = AdImpression.objects.create(
+            user=user,
+            advertisement=advertisement,
+            session_key=session_key,
+            user_agent=user_agent,
+            ip_address=ip_address
+        )
+
+        logger.info(
+            f"Created ad impression {impression.id} for ad {advertisement.id}")
+        return impression
+
+    except Exception as e:
+        logger.error(f"Error creating ad impression: {e}")
+        return None
+
+
+def get_client_ip(request):
+    """Extract client IP from request"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
+def update_ad_impression_duration(impression_id, duration_seconds, viewport_percentage=None):
+    """
+    Update ad impression with viewing duration
+
+    Args:
+        impression_id: AdImpression ID
+        duration_seconds: How long the ad was viewed
+        viewport_percentage: Percentage of ad visible (optional)
+    """
+    try:
+        impression = AdImpression.objects.get(id=impression_id)
+        impression.view_duration = duration_seconds
+
+        if viewport_percentage is not None:
+            impression.viewport_percentage = viewport_percentage
+
+        impression.is_valid_impression = duration_seconds >= 1.0
+        impression.mark_as_ended(duration_seconds)
+
+        logger.info(
+            f"Updated ad impression {impression_id}: {duration_seconds}s view")
+        return True
+
+    except AdImpression.DoesNotExist:
+        logger.error(f"Ad impression {impression_id} not found")
+        return False
+    except Exception as e:
+        logger.error(f"Error updating ad impression: {e}")
+        return False

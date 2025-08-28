@@ -1,5 +1,6 @@
 # feed/views.py
-
+from django.views.decorators.csrf import csrf_exempt
+from feed.models import AdImpression, create_ad_impression, update_ad_impression_duration
 from django.shortcuts import render, redirect
 from django.db.models import Count, Sum, Avg
 from django.http import JsonResponse
@@ -49,7 +50,7 @@ def public_posts(request):
 
         logger.info(f"User {jwt_user.id} has liked posts: {user_liked_posts}")
 
-        # ----- ADDS A FIELD ON THE FLY
+        # ----- ADDS A FIELD ON THE FLY -- for logged in users to click
         # Add user_has_liked attribute to each item
         for item in mixed_items:
             # mixed_items list contains two different types of objects (post and advert)
@@ -293,7 +294,8 @@ def toggle_like(request):
             return JsonResponse({'error': 'Post not found'}, status=404)
 
         # Check if user already liked this post
-        existing_like = PostLike.objects.filter(user=jwt_user, post=post).first()
+        existing_like = PostLike.objects.filter(
+            user=jwt_user, post=post).first()
 
         if existing_like:
             # User already liked - so unlike it
@@ -330,4 +332,164 @@ def toggle_like(request):
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
         logger.error(f"Error in toggle_like: {e}")
+        return JsonResponse({'error': 'Internal server error'}, status=500)
+
+
+# ==========================================================================
+# AD TRACKING VIEWS
+# ==========================================================================
+
+# Add these views to your feed/views.py file
+
+
+@csrf_exempt
+def track_ad_impression(request):
+    """API endpoint to track when an ad comes into view"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        ad_id = data.get('ad_id')
+
+        if not ad_id:
+            return JsonResponse({'error': 'Missing ad_id'}, status=400)
+
+        # Get the advertisement
+        try:
+            advertisement = Advertisement.objects.get(id=ad_id)
+        except Advertisement.DoesNotExist:
+            return JsonResponse({'error': 'Ad not found'}, status=404)
+
+        # Get user from JWT token
+        jwt_user = get_user_from_jwt(request)
+
+        # Create ad impression
+        impression = create_ad_impression(
+            advertisement=advertisement,
+            user=jwt_user,
+            request=request
+        )
+
+        if impression:
+            return JsonResponse({
+                'success': True,
+                'impression_id': impression.id,
+                'message': 'Ad impression tracked'
+            })
+        else:
+            # Duplicate impression prevented
+            return JsonResponse({
+                'success': True,
+                'message': 'Duplicate impression prevented'
+            })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        logger.error(f"Error in track_ad_impression: {e}")
+        return JsonResponse({'error': 'Internal server error'}, status=500)
+
+
+@csrf_exempt
+def update_ad_impression(request):
+    """API endpoint to update ad impression with viewing duration"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        impression_id = data.get('impression_id')
+        duration_seconds = data.get('duration_seconds', 0)
+        viewport_percentage = data.get('viewport_percentage', 0)
+
+        if not impression_id:
+            return JsonResponse({'error': 'Missing impression_id'}, status=400)
+
+        success = update_ad_impression_duration(
+            impression_id=impression_id,
+            duration_seconds=duration_seconds,
+            viewport_percentage=viewport_percentage
+        )
+
+        if success:
+            return JsonResponse({
+                'success': True,
+                'message': 'Ad impression updated'
+            })
+        else:
+            return JsonResponse({'error': 'Failed to update impression'}, status=400)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        logger.error(f"Error in update_ad_impression: {e}")
+        return JsonResponse({'error': 'Internal server error'}, status=500)
+
+
+def get_ad_analytics(request):
+    """API endpoint to get ad analytics data"""
+    jwt_user = get_user_from_jwt(request)
+
+    if not jwt_user or not jwt_user.is_staff:  # Only staff can view analytics
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+
+    try:
+        # Get query parameters
+        ad_id = request.GET.get('ad_id')
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        # Base queryset
+        impressions = AdImpression.objects.select_related(
+            'advertisement', 'user')
+
+        # Filter by ad_id if provided
+        if ad_id:
+            impressions = impressions.filter(advertisement_id=ad_id)
+
+        # Filter by date range if provided
+        if start_date:
+            impressions = impressions.filter(impression_start__gte=start_date)
+        if end_date:
+            impressions = impressions.filter(impression_start__lte=end_date)
+
+        # Calculate analytics
+        total_impressions = impressions.count()
+        valid_impressions = impressions.filter(
+            is_valid_impression=True).count()
+
+        avg_view_duration = impressions.filter(
+            view_duration__gt=0
+        ).aggregate(avg_duration=Avg('view_duration'))['avg_duration'] or 0
+
+        unique_users = impressions.filter(
+            user__isnull=False).values('user').distinct().count()
+
+        # Group by advertisement
+        ad_stats = impressions.values('advertisement__id', 'advertisement__brand').annotate(
+            impression_count=Count('id'),
+            valid_impression_count=Count(
+                'id', filter=Q(is_valid_impression=True)),
+            avg_duration=Avg('view_duration'),
+            unique_user_count=Count('user', distinct=True)
+        ).order_by('-impression_count')
+
+        return JsonResponse({
+            'summary': {
+                'total_impressions': total_impressions,
+                'valid_impressions': valid_impressions,
+                'avg_view_duration': round(avg_view_duration, 2),
+                'unique_users': unique_users,
+                'validation_rate': round((valid_impressions / max(total_impressions, 1)) * 100, 1)
+            },
+            'by_ad': list(ad_stats),
+            'date_range': {
+                'start': start_date,
+                'end': end_date
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Error in get_ad_analytics: {e}")
         return JsonResponse({'error': 'Internal server error'}, status=500)

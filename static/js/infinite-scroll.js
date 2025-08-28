@@ -98,8 +98,10 @@ async function loadMorePosts() {
 
     if (data.html) {
       // -- HTML --
-      console.log(data.html)
+      // console.log(data.html)
       appendPosts(data.html)
+      // CRITICAL: Tell ad tracker about new content
+      window.dispatchEvent(new CustomEvent('newContentLoaded'))
       currentPage = data.next_page || currentPage + 1
       hasNextPage = data.has_next
 

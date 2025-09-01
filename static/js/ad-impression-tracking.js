@@ -1,5 +1,3 @@
-// static/js/ad-impression-tracking.js
-
 class AdImpressionTracker {
   constructor() {
     this.observedAds = new Map() // Store ad viewing data
@@ -10,6 +8,9 @@ class AdImpressionTracker {
     this.init()
   }
 
+  // ----------------------------------------------------------------------------------
+  // INIT
+  // ----------------------------------------------------------------------------------
   init() {
     if (!('IntersectionObserver' in window)) {
       console.warn('IntersectionObserver not supported, ad tracking disabled')
@@ -21,6 +22,9 @@ class AdImpressionTracker {
     this.setupVisibilityHandlers()
   }
 
+  // ----------------------------------------------------------------------------------
+  // CREATE INTERSECTION OBSERVER
+  // ----------------------------------------------------------------------------------
   createIntersectionObserver() {
     const options = {
       root: null, // Use viewport
@@ -33,10 +37,19 @@ class AdImpressionTracker {
     }, options)
   }
 
+  // ----------------------------------------------------------------------------------
+  // OBSERVE ADS
+  // ----------------------------------------------------------------------------------
   observeAds() {
+    // in adverts.html
     const adElements = document.querySelectorAll('[data-ad-id]')
+    console.log('------- Ad Elements -------')
+    console.log(adElements)
+
     adElements.forEach((adEl) => {
       const adId = adEl.dataset.adId
+      console.log('ad-el -->', adEl)
+
       if (adId && !this.observedAds.has(adId)) {
         // Only if not already tracking
         this.observer.observe(adEl)
@@ -57,13 +70,21 @@ class AdImpressionTracker {
     })
   }
 
+  // ----------------------------------------------------------------------------------
+  // HANDLE VISIBILITY
+  // ----------------------------------------------------------------------------------
   handleAdVisibility(entry) {
+    console.log('------ ENTRY (HANDLE-VIS) ------')
+    console.log(entry)
     // CRITICAL FIX: Don't process visibility changes if page is hidden
     if (!this.isPageVisible) {
       return
     }
 
     const adElement = entry.target
+    console.log('------ AD ELEMENT IN HANDLE VIS ------')
+    console.log(adElement)
+
     const adId = adElement.dataset.adId
     const adData = this.observedAds.get(adId)
 
@@ -72,6 +93,9 @@ class AdImpressionTracker {
     const isVisible = entry.intersectionRatio >= this.impressionThreshold
     const currentTime = Date.now()
 
+    console.log('------ OBSERVER ADS MAP()')
+    console.log(this.observedAds)
+
     // Update max visibility percentage
     adData.maxVisibility = Math.max(
       adData.maxVisibility,
@@ -79,11 +103,19 @@ class AdImpressionTracker {
     )
 
     if (isVisible && !adData.isVisible) {
+      // -------------------
       // Ad became visible
-      adData.isVisible = true
+      // -------------------
+      // By setting adData.isVisible = true, subsequent
+      // IntersectionObserver events will fail the !adData.isVisible
+      // check, preventing duplicate API calls.
+
+      adData.isVisible = true // ← This prevents future duplicates
       adData.startTime = currentTime
 
       // Track impression start
+      // After trackImpressionStart() succeeds, it sets adData.impressionTracked = true, providing a second layer of 
+      // protection against duplicates even if the state logic somehow fails.
       if (!adData.impressionTracked) {
         this.trackImpressionStart(adId, adData)
       }
@@ -94,7 +126,10 @@ class AdImpressionTracker {
         )}%)`
       )
     } else if (!isVisible && adData.isVisible) {
-      // Ad became invisible
+      // -------------------
+      // ========= Ad became invisible ========= /
+      // -------------------
+
       adData.isVisible = false
       adData.endTime = currentTime
 
@@ -117,19 +152,32 @@ class AdImpressionTracker {
     }
   }
 
+  // ----------------------------------------------------------------------------------
+  // SET UP VISIBILITY HANDLERS
+  // ----------------------------------------------------------------------------------
+
   setupVisibilityHandlers() {
+    // ----------------------------------------------------------------------------------
+    // HANDLE VISIBILITY CHANGES
+    // ----------------------------------------------------------------------------------
     // Handle page visibility changes
     document.addEventListener('visibilitychange', () => {
       this.handleVisibilityChange()
     })
 
+    // ----------------------------------------------------------------------------------
+    // HANDLE PAGE UN LOAD
+    // ----------------------------------------------------------------------------------
     // Handle page unload
     window.addEventListener('beforeunload', () => {
       this.handleBeforeUnload()
     })
   }
 
-  // Handle page visibility changes
+  // ----------------------------------------------------------------------------------
+  // HANDLE PAGE VISIBILITY CHANGES
+  // ----------------------------------------------------------------------------------
+
   handleVisibilityChange() {
     const wasVisible = this.isPageVisible
     this.isPageVisible = !document.hidden
@@ -145,6 +193,9 @@ class AdImpressionTracker {
     }
   }
 
+  // ----------------------------------------------------------------------------------
+  // PAUSE VISIBLE ADS
+  // ----------------------------------------------------------------------------------
   pauseAllVisibleAds() {
     const currentTime = Date.now()
 
@@ -167,6 +218,10 @@ class AdImpressionTracker {
     })
   }
 
+  // ----------------------------------------------------------------------------------
+  // RESUME VISIBLE ADS
+  // ----------------------------------------------------------------------------------
+
   resumeVisibleAds() {
     const currentTime = Date.now()
 
@@ -180,6 +235,9 @@ class AdImpressionTracker {
     })
   }
 
+  // ----------------------------------------------------------------------------------
+  // TRACK IMPRESSION START
+  // ----------------------------------------------------------------------------------
   async trackImpressionStart(adId, adData) {
     try {
       const response = await fetch('/feed/api/track-ad-impression/', {
@@ -210,14 +268,18 @@ class AdImpressionTracker {
     }
   }
 
+  // ----------------------------------------------------------------------------------
+  // UPDATE IMPRESSION DURATION
+  // ----------------------------------------------------------------------------------
+
   async updateImpressionDuration(adId, adData) {
     if (!adData.impressionId || adData.updateSent) {
       return
     }
 
     try {
-      const durationSeconds = adData.totalVisibleTime / 1000
-      const viewportPercentage = adData.maxVisibility
+      const durationSeconds = adData.totalVisibleTime / 1000 // → converts to seconds for database
+      const viewportPercentage = adData.maxVisibility // already a percentage (0.0-1.0) → ready to send
 
       const response = await fetch('/feed/api/update-ad-impression/', {
         method: 'POST',
@@ -226,9 +288,9 @@ class AdImpressionTracker {
           'X-CSRFToken': this.getCSRFToken(),
         },
         body: JSON.stringify({
-          impression_id: adData.impressionId,
-          duration_seconds: durationSeconds,
-          viewport_percentage: viewportPercentage,
+          impression_id: adData.impressionId, // Links to existing record
+          duration_seconds: durationSeconds, // Timing data
+          viewport_percentage: viewportPercentage, // Visibility data
         }),
       })
 
@@ -249,6 +311,9 @@ class AdImpressionTracker {
     }
   }
 
+  // ----------------------------------------------------------------------------------
+  // GET CSRF TOKEN
+  // ----------------------------------------------------------------------------------
   getCSRFToken() {
     // Try to get from hidden input first
     const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]')
@@ -274,7 +339,10 @@ class AdImpressionTracker {
     return cookieValue
   }
 
-  // Handle page unload
+  // ----------------------------------------------------------------------------------
+  // HANDLE PAGE UNLOAD
+  // ----------------------------------------------------------------------------------
+
   handleBeforeUnload() {
     // Send final updates for any visible ads
     this.observedAds.forEach((adData, adId) => {
@@ -291,6 +359,9 @@ class AdImpressionTracker {
     })
   }
 
+  // ----------------------------------------------------------------------------------
+  // SEND FINAL IMPRESSION
+  // ----------------------------------------------------------------------------------
   sendFinalImpression(adId, adData) {
     if (!adData.impressionId) return
 
@@ -308,6 +379,9 @@ class AdImpressionTracker {
     }
   }
 
+  // ----------------------------------------------------------------------------------
+  // GET CURRENT TRACKING STATISTICS
+  // ----------------------------------------------------------------------------------
   // Get current tracking statistics (for debugging)
   getTrackingStats() {
     const stats = {

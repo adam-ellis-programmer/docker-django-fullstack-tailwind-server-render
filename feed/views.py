@@ -1,5 +1,6 @@
 # feed/views.py
 from django.views.decorators.csrf import csrf_exempt
+# import Model --> and helper functions
 from feed.models import AdImpression, create_ad_impression, update_ad_impression_duration
 from django.shortcuts import render, redirect
 from django.db.models import Count, Sum, Avg
@@ -85,6 +86,9 @@ def load_more_posts(request):
     jwt_user = get_user_from_jwt(request)
     page_number = request.GET.get('page', 1)
 
+    print('------- PAGE NUMBER ------')
+    print(page_number)
+
     logger.info(f"Load more posts: user={jwt_user}, page={page_number}")
 
     # Get ALL posts instead of smart filtering
@@ -118,9 +122,13 @@ def load_more_posts(request):
         'jwt_user': jwt_user
     })
 
+    # page.has_next()         # Returns True (step 1)
+    # page.next_page_number() # Returns 6 (step 2A - condition was True)
+
     return JsonResponse({
         'html': posts_html,
         'has_next': page.has_next(),
+        #  "If there's a next page, get its number; otherwise, return None"
         'next_page': page.next_page_number() if page.has_next() else None,
         'current_page': page.number,
         'total_pages': paginator.num_pages
@@ -339,9 +347,8 @@ def toggle_like(request):
 # AD TRACKING VIEWS
 # ==========================================================================
 
-# Add these views to your feed/views.py file
 
-
+#  This view just creates the initial "stub" record with no timing data yet.
 @csrf_exempt
 def track_ad_impression(request):
     """API endpoint to track when an ad comes into view"""
@@ -357,6 +364,7 @@ def track_ad_impression(request):
 
         # Get the advertisement
         try:
+            # Verifies the ad exists in database
             advertisement = Advertisement.objects.get(id=ad_id)
         except Advertisement.DoesNotExist:
             return JsonResponse({'error': 'Ad not found'}, status=404)
@@ -366,7 +374,7 @@ def track_ad_impression(request):
 
         # Create ad impression
         impression = create_ad_impression(
-            advertisement=advertisement,
+            advertisement=advertisement,  # Foreign key to Advertisement model
             user=jwt_user,
             request=request
         )

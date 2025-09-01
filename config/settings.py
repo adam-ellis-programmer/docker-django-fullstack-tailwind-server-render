@@ -79,16 +79,18 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'feedapp',
-        'USER': 'feeduser',
-        'PASSWORD': 'feedpass',
-        'HOST': 'db',
-        'PORT': '5432',
+DEV = True
+if DEV:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'feedapp',
+            'USER': 'feeduser',
+            'PASSWORD': 'feedpass',
+            'HOST': 'db',
+            'PORT': '5432',
+        }
     }
-}
 
 
 # Password validation

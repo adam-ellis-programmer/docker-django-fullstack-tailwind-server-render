@@ -1,13 +1,14 @@
 <!-- Posts Feed Component with Infinite Scroll -->
 <div
-  class="lg:col-span-2"
+  class="lg:col-span-2 border border-rose-500" 
   data-infinite-scroll="true"
   data-next-page="{{ next_page_number|default:'null' }}"
   data-has-next="{{ has_next|yesno:'true,false' }}"
   data-endpoint="{% url 'feed:load_more_posts' %}"
 >
   <!-- Posts Container -->
-  <div id="posts-container" class="space-y-6">
+  <div id="posts-container" class="space-y-6 border border-orange-500">
+    <!-- the post container -->
     {% include 'components/posts_list.html' with items=items %}
   </div>
 

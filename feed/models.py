@@ -444,7 +444,9 @@ class AdImpression(models.Model):
         self.save()
 
 
-# Utility functions for ad impression tracking
+# --------------------------------------------------------
+#  Utility functions for ad impression tracking
+# --------------------------------------------------------
 
 def create_ad_impression(advertisement, user=None, request=None):
     """
@@ -462,6 +464,7 @@ def create_ad_impression(advertisement, user=None, request=None):
             user_agent = request.META.get('HTTP_USER_AGENT', '')
 
         # TEMPORARILY COMMENTED OUT FOR TESTING
+        # This would prevent creating multiple impressions for same user/ad within 1 minute
         # # Check for recent duplicate impression (within last minute)
         # recent_cutoff = timezone.now() - timezone.timedelta(minutes=1)
         #
@@ -481,6 +484,9 @@ def create_ad_impression(advertisement, user=None, request=None):
         #     return None
 
         # Create new impression
+        # Is a factory funciton as it returns this object
+        # not a pure factory as It directly creates database records (has side effects) / It handles error cases by returning None /It's tightly coupled to Django's ORM
+
         impression = AdImpression.objects.create(
             user=user,
             advertisement=advertisement,
@@ -488,6 +494,21 @@ def create_ad_impression(advertisement, user=None, request=None):
             user_agent=user_agent,
             ip_address=ip_address
         )
+# ---------------------
+#     What gets stored:
+# ---------------------
+#     AdImpression(
+#     id=auto_generated,                    # Primary key
+#     user=User_object_or_None,            # Foreign key to User
+#     advertisement=Advertisement_object,   # Foreign key to Advertisement
+#     session_key="django_session_abc123", # Session tracking
+#     user_agent="Mozilla/5.0...",         # Browser details
+#     ip_address="192.168.1.100",          # Network location
+#     impression_start=timezone.now(),     # Auto-set by model
+#     view_duration=0.0,                   # Default from model
+#     viewport_percentage=0.0,             # Default from model
+#     is_valid_impression=True,            # Default from model
+# )
 
         logger.info(
             f"Created ad impression {impression.id} for ad {advertisement.id}")
@@ -519,7 +540,7 @@ def update_ad_impression_duration(impression_id, duration_seconds, viewport_perc
     """
     try:
         impression = AdImpression.objects.get(id=impression_id)
-        impression.view_duration = duration_seconds
+        impression.view_duration = duration_seconds 
 
         if viewport_percentage is not None:
             impression.viewport_percentage = viewport_percentage

@@ -1,14 +1,14 @@
 // static/js/infinite-scroll.js
 
 // Infinite Scroll Implementation using Functions
-let currentPage = 1
+let nextPageToLoad = 1
 let hasNextPage = true
 let isLoading = false
 let apiEndpoint = '/feed/api/load-more-posts/' // Default endpoint
 
 // Initialize infinite scroll with configuration
 function initInfiniteScroll(config = {}) {
-  currentPage = config.nextPage || 1
+  nextPageToLoad = config.nextPage || 1
   hasNextPage = config.hasNext !== undefined ? config.hasNext : true
   apiEndpoint = config.endpoint || '/feed/api/load-more-posts/'
 
@@ -79,7 +79,7 @@ async function loadMorePosts() {
   try {
     // Add minimum delay to see loading indicator
     const [response] = await Promise.all([
-      fetch(`${apiEndpoint}?page=${currentPage}`, {
+      fetch(`${apiEndpoint}?page=${nextPageToLoad}`, {
         method: 'GET',
         headers: {
           'X-Requested-With': 'XMLHttpRequest',
@@ -102,7 +102,9 @@ async function loadMorePosts() {
       appendPosts(data.html)
       // CRITICAL: Tell ad tracker about new content
       window.dispatchEvent(new CustomEvent('newContentLoaded'))
-      currentPage = data.next_page || currentPage + 1
+
+      nextPageToLoad = data.next_page || nextPageToLoad + 1
+      console.log('next page to load !!', nextPageToLoad)
       hasNextPage = data.has_next
 
       if (!hasNextPage) {
@@ -126,11 +128,21 @@ function appendPosts(html) {
     return
   }
 
+  console.log('HTML')
+  console.log(html)
+
+  // The tempDiv is needed because the html parameter is a string, not actual DOM elements.
   const tempDiv = document.createElement('div')
   tempDiv.innerHTML = html
 
+  // console.log('temp div children')
+  // console.log(tempDiv.children)
+
   // Append each post with animation
   Array.from(tempDiv.children).forEach((post, index) => {
+    console.log(' ----- POST -----')
+    console.log(post)
+
     post.style.opacity = '0'
     post.style.transform = 'translateY(20px)'
     container.appendChild(post)
@@ -242,12 +254,11 @@ document.addEventListener('DOMContentLoaded', function () {
     '[data-infinite-scroll="true"]'
   )
 
+  console.log('from config - initInfiniteScrollg', infiniteScrollElement)
+  // prettier-ignore
   if (infiniteScrollElement && !window.infiniteScrollInitialized) {
     const config = {
-      nextPage:
-        infiniteScrollElement.dataset.nextPage !== 'null'
-          ? parseInt(infiniteScrollElement.dataset.nextPage)
-          : null,
+      nextPage: infiniteScrollElement.dataset.nextPage !== 'null' ? parseInt(infiniteScrollElement.dataset.nextPage): null,
       hasNext: infiniteScrollElement.dataset.hasNext === 'true',
       endpoint: infiniteScrollElement.dataset.endpoint,
     }

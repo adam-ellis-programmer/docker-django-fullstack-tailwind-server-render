@@ -347,4 +347,4 @@ document.addEventListener('submit', function (e) {
   }
 })
 
-console.log('Modal system loaded - event listeners active')
+// console.log('Modal system loaded - event listeners active')

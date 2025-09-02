@@ -1,4 +1,4 @@
-console.log('Post likes functionality loaded!')
+// console.log('Post likes functionality loaded!')
 
 // Get CSRF token from Django
 function getCSRFToken() {
@@ -128,7 +128,7 @@ function handleLikeClick(postId, likeButton) {
 
 // Initialize like functionality with event delegation
 function initializeLikeButtons() {
-  console.log('Setting up like button listeners...')
+  // console.log('Setting up like button listeners...')
 
   // Use event delegation for dynamically loaded content
   document.addEventListener('click', function (event) {
@@ -148,7 +148,7 @@ function initializeLikeButtons() {
     handleLikeClick(postId, likeButton)
   })
 
-  console.log('Like button listeners ready!')
+  // console.log('Like button listeners ready!')
 }
 
 // Set up event listeners when DOM is loaded

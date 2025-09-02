@@ -104,7 +104,7 @@ async function loadMorePosts() {
       window.dispatchEvent(new CustomEvent('newContentLoaded'))
 
       nextPageToLoad = data.next_page || nextPageToLoad + 1
-      console.log('next page to load !!', nextPageToLoad)
+      // console.log('next page to load !!', nextPageToLoad)
       hasNextPage = data.has_next
 
       if (!hasNextPage) {
@@ -128,8 +128,8 @@ function appendPosts(html) {
     return
   }
 
-  console.log('HTML')
-  console.log(html)
+  // console.log('HTML')
+  // console.log(html)
 
   // The tempDiv is needed because the html parameter is a string, not actual DOM elements.
   const tempDiv = document.createElement('div')
@@ -140,8 +140,8 @@ function appendPosts(html) {
 
   // Append each post with animation
   Array.from(tempDiv.children).forEach((post, index) => {
-    console.log(' ----- POST -----')
-    console.log(post)
+    // console.log(' ----- POST -----')
+    // console.log(post)
 
     post.style.opacity = '0'
     post.style.transform = 'translateY(20px)'
@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
     '[data-infinite-scroll="true"]'
   )
 
-  console.log('from config - initInfiniteScrollg', infiniteScrollElement)
+  // console.log('from config - initInfiniteScrollg', infiniteScrollElement)
   // prettier-ignore
   if (infiniteScrollElement && !window.infiniteScrollInitialized) {
     const config = {

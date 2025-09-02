@@ -22,3 +22,5 @@ urlpatterns = [
     # Toggle Likes on post article
     path('toggle-like/', views.toggle_like, name='toggle_like'),
 ]
+
+

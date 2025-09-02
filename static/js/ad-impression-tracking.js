@@ -34,6 +34,7 @@ class AdImpressionTracker {
     this.observeAllAds()
   }
 
+  // 1
   createObserver() {
     const options = {
       root: null,
@@ -51,20 +52,21 @@ class AdImpressionTracker {
   // ========================================
   // AD OBSERVATION
   // ========================================
-
+  // 2
+  // prettier-ignore
   observeAllAds() {
-    const adElements = document.querySelectorAll('[data-ad-id]')
-
-    adElements.forEach((element) => {
-      const adId = element.dataset.adId
-
-      if (adId && !this.observedAds.has(adId)) {
-        this.observer.observe(element)
-        this.initializeAdData(adId, element)
+        const adElements = document.querySelectorAll('[data-ad-id]')  // 1. Find all ads on page
+        
+        adElements.forEach((element) => {                            // 2. Loop through each ad
+          const adId = element.dataset.adId                          // 3. Get the ad ID
+          
+          if (adId && !this.observedAds.has(adId)) {                // 4. Check if not already tracking
+            this.observer.observe(element)                           // 5. Start watching this ad element
+            this.initializeAdData(adId, element)                     // 6. Create tracking data in Map
+          }
+        })
       }
-    })
-  }
-
+  // 3
   initializeAdData(adId, element) {
     this.observedAds.set(adId, {
       element,
@@ -81,6 +83,7 @@ class AdImpressionTracker {
   // VISIBILITY HANDLING (CORE LOGIC)
   // ========================================
 
+  // 4
   handleVisibilityChange(entry) {
     const adId = entry.target.dataset.adId
     const adData = this.observedAds.get(adId)
@@ -93,13 +96,16 @@ class AdImpressionTracker {
       entry.intersectionRatio
     )
 
-    const currentlyVisible =
-      entry.intersectionRatio >= this.config.impressionThreshold
+    // prettier-ignore
+    const currentlyVisible = entry.intersectionRatio >= this.config.impressionThreshold
     const wasVisible = adData.isVisible
+    console.log('WAS VISIBLE-->', wasVisible)
 
     if (currentlyVisible && !wasVisible) {
+      // Ad just crossed INTO view for the first time
       this.startAdSession(adId, adData)
     } else if (!currentlyVisible && wasVisible) {
+      // Ad just crossed OUT OF view after being tracked" → END session
       this.endAdSession(adId, adData)
     }
   }
@@ -107,7 +113,7 @@ class AdImpressionTracker {
   // ========================================
   // SESSION MANAGEMENT (SIMPLIFIED)
   // ========================================
-
+  // 5
   startAdSession(adId, adData) {
     adData.isVisible = true
     adData.startTime = Date.now()
@@ -145,7 +151,7 @@ class AdImpressionTracker {
   // ========================================
   // API COMMUNICATION
   // ========================================
-
+  // 6
   async trackImpressionStart(adId, adData) {
     const response = await trackImpressionStart(adId)
 

@@ -1,5 +1,3 @@
-// simplified-ad-tracker.js - Only track start/end sessions
-
 import {
   trackImpressionStart,
   updateImpressionDuration,

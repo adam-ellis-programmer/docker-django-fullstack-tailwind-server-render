@@ -11,10 +11,10 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -79,8 +79,15 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DEV = True
+# Environment configuration
+# DEV = os.environ.get('DEV', 'False').lower() == 'true'
+print('----------------------- test value --------------')
+print(os.environ.get('TEST'))
+
+DEV = False
+
 if DEV:
+    # Local development database (Docker)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -91,6 +98,37 @@ if DEV:
             'PORT': '5432',
         }
     }
+else:
+    # Production database (Supabase PostgreSQL)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'postgres',
+            'USER': 'postgres.suohkdsthwxfacjmsgde',
+            'PASSWORD': 'zG33zry0RaAmpVKX',  # This MUST be set
+            'HOST': 'aws-1-eu-west-2.pooler.supabase.com',
+            'PORT': '5432',
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
+        },
+    }
+
+
+# Production security settings
+if not DEV:
+    ALLOWED_HOSTS = [
+        'localhost',        # ← Add this for local testing
+        '127.0.0.1',       # ← Add this too
+        'your-domain.com',  # Replace with your actual domain
+        '.supabase.co',     # Allow Supabase subdomains
+    ]
+
+    # SSL settings for production
+    # SECURE_SSL_REDIRECT = True
+    # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    # SESSION_COOKIE_SECURE = True
+    # CSRF_COOKIE_SECURE = True
 
 
 # Password validation

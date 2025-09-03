@@ -3,7 +3,7 @@ import {
   updateImpressionDuration,
   isIntersectionObserverSupported,
 } from './utils.js'
-
+// zG33zry0RaAmpVKX - Django feed app
 class AdImpressionTracker {
   constructor() {
     this.config = {
@@ -118,7 +118,7 @@ class AdImpressionTracker {
 
     // Track impression start in database
     if (!adData.impressionTracked) {
-      this.trackImpressionStart(adId, adData)
+      this.handleImpressionStart(adId, adData)
     }
 
     console.log(`Ad ${adId} session started`)
@@ -137,7 +137,7 @@ class AdImpressionTracker {
         adData.totalVisibleTime >= this.config.minimumViewTime &&
         adData.impressionId
       ) {
-        this.updateImpression(adId, adData)
+        this.handleUpdateImpression(adId, adData)
       }
     }
 
@@ -150,7 +150,7 @@ class AdImpressionTracker {
   // API COMMUNICATION
   // ========================================
   // 6
-  async trackImpressionStart(adId, adData) {
+  async handleImpressionStart(adId, adData) {
     const response = await trackImpressionStart(adId)
 
     if (response?.success) {
@@ -162,7 +162,7 @@ class AdImpressionTracker {
     }
   }
 
-  async updateImpression(adId, adData) {
+  async handleUpdateImpression(adId, adData) {
     const durationSeconds = adData.totalVisibleTime / 1000
     const viewportPercentage = adData.maxVisibility
 

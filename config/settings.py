@@ -20,7 +20,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY') or 'django-insecure-*6f3gylmc4(9u0(m4)a+bf^we_o$j^j&gltn25omewm=h(h2ro'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -128,7 +129,7 @@ if not DEV:
         'localhost',        # ← Add this for local testing
         '127.0.0.1',       # ← Add this too
         'your-domain.com',  # Replace with your actual domain
-        '.up.railway.app', 
+        '.up.railway.app',
         '.supabase.co',     # Allow Supabase subdomains
     ]
 

@@ -27,6 +27,10 @@ COPY . /app/
 # Copy built CSS from the CSS builder stage
 COPY --from=css-builder /app/static/css/output.css ./static/css/output.css
 
+# Collect static files for production
+RUN python manage.py collectstatic --noinput
+
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+# Use gunicorn for production instead of runserver
+CMD ["sh", "-c", "python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000"]

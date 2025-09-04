@@ -24,7 +24,7 @@ SECRET_KEY = os.environ.get(
     'SECRET_KEY') or 'django-insecure-*6f3gylmc4(9u0(m4)a+bf^we_o$j^j&gltn25omewm=h(h2ro'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 
 # Application definition
@@ -44,7 +44,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -80,18 +80,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 # Environment configuration
-# DEV = os.environ.get('DEV', 'False').lower() == 'true'
-print('----------------------- test value --------------')
-print(os.environ.get('TEST'))
-
-DEV = False
 DB_USER = os.environ.get('DB_USER')
 DB_PASS = os.environ.get('DB_PASS')
 DB_HOST = os.environ.get('DB_HOST')
 DB_PORT = os.environ.get('DB_PORT')
 
-
-if DEV:
+if DEBUG:
     # Local development database (Docker)
     DATABASES = {
         'default': {
@@ -104,7 +98,6 @@ if DEV:
         }
     }
 else:
-    # Production database (Supabase PostgreSQL)
     # Production database (Supabase PostgreSQL - Session Pooler)
     DATABASES = {
         'default': {
@@ -118,27 +111,19 @@ else:
             'CONN_HEALTH_CHECKS': True,
             'OPTIONS': {
                 'sslmode': 'require',
-                'connect_timeout': 5,  # This one works
+                'connect_timeout': 5,
             },
         }
     }
 
 
-# Production security settings
-if not DEV:
-    ALLOWED_HOSTS = [
-        'localhost',        # ← Add this for local testing
-        '127.0.0.1',       # ← Add this too
-        'your-domain.com',  # Replace with your actual domain
-        '.up.railway.app',
-        '.supabase.co',     # Allow Supabase subdomains
-    ]
-
-    # SSL settings for production
-    # SECURE_SSL_REDIRECT = True
-    # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    # SESSION_COOKIE_SECURE = True
-    # CSRF_COOKIE_SECURE = True
+# ALLOWED_HOSTS configuration
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.railway.app',  # This allows all Railway subdomains
+    'docker-django-fullstack-tailwind-server-render-production.up.railway.app',
+]
 
 
 # Password validation
@@ -175,21 +160,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # Where collectstatic puts files
 
-if DEBUG:
-    # Development - serve from source directories
-    STATICFILES_DIRS = [
-        BASE_DIR / 'static',
-    ]
-else:
-    # Production - collect all static files here
-    STATIC_ROOT = BASE_DIR / 'staticfiles'
-    # Also add staticfiles dirs for production
-    STATICFILES_DIRS = [
-        BASE_DIR / 'static',
-    ]
+# Add your source static directories
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',  # Your source static files
+]
+
+# WhiteNoise configuration for static file compression
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # Default primary key field type
@@ -202,7 +182,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.AppUser'
 
 
-# Development-only additions (was +=)
+# Development-only additions
 if DEBUG:
     # Add browser reload for automatic page refresh
     INSTALLED_APPS.append('django_browser_reload')
@@ -210,7 +190,17 @@ if DEBUG:
         'django_browser_reload.middleware.BrowserReloadMiddleware')
 
 
-# settings.py
+# Security settings for production
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    # Note: SECURE_BROWSER_XSS_FILTER is deprecated and removed in Django 4.1+
+    # Modern browsers handle XSS protection automatically
+
+
+# Logging configuration
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

@@ -128,7 +128,7 @@ if not DEV:
         'localhost',        # ← Add this for local testing
         '127.0.0.1',       # ← Add this too
         'your-domain.com',  # Replace with your actual domain
-        '*.up.railway.app',
+        '.up.railway.app', 
         '.supabase.co',     # Allow Supabase subdomains
     ]
 

@@ -15,9 +15,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app/
 
-# Add this line to collect static files
-RUN python manage.py collectstatic --noinput
+# Remove this line - causes issues during build
+# RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+# Move collectstatic to runtime when env vars are available
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]

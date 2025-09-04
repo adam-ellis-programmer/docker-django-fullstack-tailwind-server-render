@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class Post(models.Model):
+    #
     # Author relationship
     # Django's Automatic Field Naming: author_id
     author = models.ForeignKey(
@@ -48,6 +49,13 @@ class Post(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Post'
         verbose_name_plural = 'Posts'
+        indexes = [
+            models.Index(fields=['-created_at']),  # For pagination
+            models.Index(fields=['author', '-created_at']),  # For user posts
+            # ADD THESE TWO LINES:
+            models.Index(fields=['likes'], name='post_likes_count_idx'),
+            models.Index(fields=['author', 'likes'], name='author_likes_idx'),
+        ]
 
     def __str__(self):
         return f"{self.title} by {self.author.username}"
@@ -305,6 +313,8 @@ class PostImpression(models.Model):
 # The related_name='post_likes' allows reverse lookups:
     # user.post_likes.all() - get all PostLike objects for this user
     # user.post_likes.count() - count how many posts this user has liked
+# Add to your feed/models.py - optimized indexes for faster queries
+
 class PostLike(models.Model):
     """Track which users have liked which posts"""
 
@@ -318,8 +328,6 @@ class PostLike(models.Model):
         on_delete=models.CASCADE,
         related_name='user_likes'
     )
-
-    # Timestamp for analytics
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -329,20 +337,28 @@ class PostLike(models.Model):
         verbose_name = 'Post Like'
         verbose_name_plural = 'Post Likes'
         indexes = [
-            models.Index(fields=['user']),  # Fast lookup of user's likes
-            models.Index(fields=['post']),  # Fast lookup of post's likes
-            models.Index(fields=['created_at']),  # Analytics queries
+            # Composite index for the toggle_like query
+            models.Index(fields=['user', 'post'], name='user_post_like_idx'),
+            # Individual indexes for foreign key lookups
+            models.Index(fields=['user'], name='user_likes_idx'),
+            models.Index(fields=['post'], name='post_likes_idx'),
+            # Index for analytics queries
+            models.Index(fields=['created_at'], name='like_created_idx'),
         ]
 
     def __str__(self):
         return f"{self.user.username} likes {self.post.title}"
 
 
+# Migration command to create these indexes:
+# python manage.py makemigrations feed
+# python manage.py migrate feed
 # ========================================================================
 # ADVERT TRACKIGN -- Track User-Post Like Relationships
 # ========================================================================
 
 # Add this to your feed/models.py file after the existing models
+
 
 class AdImpression(models.Model):
     """Track ad impressions for analytics"""
@@ -540,7 +556,7 @@ def update_ad_impression_duration(impression_id, duration_seconds, viewport_perc
     """
     try:
         impression = AdImpression.objects.get(id=impression_id)
-        impression.view_duration = duration_seconds 
+        impression.view_duration = duration_seconds
 
         if viewport_percentage is not None:
             impression.viewport_percentage = viewport_percentage

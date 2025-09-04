@@ -43,7 +43,7 @@ function getCSRFToken() {
 function createIntersectionObserver() {
   const options = {
     root: null, // Use viewport as root
-    rootMargin: '-100px', // Start loading 100px before element is visible
+    rootMargin: '100px', // Start loading 100px before element is visible
     threshold: 0.8, // Trigger when 10% of element is visible
   }
 
@@ -87,7 +87,7 @@ async function loadMorePosts() {
         },
       }),
       // for development only
-      new Promise((resolve) => setTimeout(resolve, 500)), // 500ms minimum
+      // new Promise((resolve) => setTimeout(resolve, 500)), // 500ms minimum
     ])
 
     if (!response.ok) {
@@ -95,6 +95,8 @@ async function loadMorePosts() {
     }
 
     const data = await response.json()
+
+    console.log('respnse data->', data)
 
     if (data.html) {
       // -- HTML --

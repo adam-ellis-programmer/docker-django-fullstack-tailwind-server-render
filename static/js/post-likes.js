@@ -1,175 +1,166 @@
-// console.log('Post likes functionality loaded!')
+// Optimized post-likes.js with better error handling and UI feedback
 
-// Get CSRF token from Django
-function getCSRFToken() {
-  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')
-  if (csrfToken) {
-    return csrfToken.value
-  }
+// Track pending requests to prevent double-clicks
+const pendingLikes = new Set()
 
-  // Fallback: get from cookie
-  const name = 'csrftoken'
-  const cookies = document.cookie.split(';')
-  for (let cookie of cookies) {
-    const [key, value] = cookie.trim().split('=')
-    if (key === name) {
-      return decodeURIComponent(value)
+document.addEventListener('DOMContentLoaded', function () {
+  // Use event delegation for better performance with infinite scroll
+  document.addEventListener('click', function (e) {
+    const likeButton = e.target.closest('.like-button')
+    if (likeButton) {
+      e.preventDefault()
+      handleLikeClick(likeButton)
     }
+  })
+})
+
+async function handleLikeClick(button) {
+  const postId = button.dataset.postId
+
+  // Prevent double-clicks
+  if (pendingLikes.has(postId)) {
+    return
   }
-  return null
-}
 
-// JavaScript for Conditional Rendering (Replace Heart Icon)
-function handleLikeClick(postId, likeButton) {
-  if (likeButton.classList.contains('processing')) return
+  // Add visual feedback immediately
+  const heartIcon = button.querySelector('i')
+  const likeCount = button.querySelector('.like-count')
 
-  likeButton.classList.add('processing')
-  likeButton.style.pointerEvents = 'none' // Prevent additional clicks
+  // Store original states for rollback
+  const originalHeartClass = heartIcon.className
+  const originalButtonClass = button.className
+  const originalCount = parseInt(likeCount.textContent)
 
-  const likeCountSpan = likeButton.querySelector('.like-count')
-  const currentCount = parseInt(likeCountSpan.textContent)
-  let heartIcon = likeButton.querySelector('.fa-heart')
-
-  // Check current state
+  // Optimistic UI update
   const isCurrentlyLiked = heartIcon.classList.contains('fa-solid')
+  const newCount = isCurrentlyLiked ? originalCount - 1 : originalCount + 1
 
-  console.log(
-    `Post ${postId} - Currently liked: ${isCurrentlyLiked}, Current count: ${currentCount}`
-  )
+  // Update UI immediately
+  updateLikeButtonUI(button, !isCurrentlyLiked, newCount)
 
-  // 2. Optimistic update (immediate UI change)
-  if (isCurrentlyLiked) {
-    // Unlike - replace with empty heart
-    likeCountSpan.textContent = currentCount - 1
-    heartIcon.className = 'fa-regular fa-heart' // Unlike
-    // likeButton.classList.remove('text-red-500')
-    // likeButton.classList.add('text-gray-500')
-    console.log('Optimistically unliked')
-  } else {
-    // Like - replace with filled heart
-    likeCountSpan.textContent = currentCount + 1
-    heartIcon.className = 'fa-solid fa-heart text-red-500' // Unlike
-    // likeButton.classList.remove('text-gray-500')
-    // likeButton.classList.add('text-red-500')
-    console.log('Optimistically liked')
-  }
+  // Add to pending set
+  pendingLikes.add(postId)
 
-  // API call
-  fetch('/feed/toggle-like/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCSRFToken(),
-    },
-    body: JSON.stringify({ post_id: postId }),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      return response.json()
+  try {
+    // Make the API request with timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+    const response = await fetch('/feed/toggle-like/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCSRFToken(),
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: JSON.stringify({ post_id: postId }),
+      signal: controller.signal,
     })
-    .then((data) => {
-      console.log('Server response:', data)
 
-      if (data.success) {
-        likeCountSpan.textContent = data.new_like_count
+    clearTimeout(timeoutId)
 
-        // Update heart based on server response
-        heartIcon = likeButton.querySelector('.fa-heart') // Re-get reference
-        if (data.user_has_liked) {
-          heartIcon.className = 'fa-solid fa-heart text-red-500'
-          likeButton.classList.add('text-red-500')
-          likeButton.classList.remove('text-gray-500')
-        } else {
-          heartIcon.className = 'fa-regular fa-heart'
-          likeButton.classList.add('text-gray-500')
-          likeButton.classList.remove('text-red-500')
-        }
-
-        console.log(
-          `Post ${postId} ${data.action}! Server count: ${data.new_like_count}`
-        )
-      } else {
-        console.error('Error from server:', data.error)
-        // Revert on error
-        likeCountSpan.textContent = currentCount
-        if (isCurrentlyLiked) {
-          heartIcon.className = 'fa-solid fa-heart text-red-500'
-          likeButton.classList.add('text-red-500')
-          likeButton.classList.remove('text-gray-500')
-        } else {
-          heartIcon.className = 'fa-regular fa-heart'
-          likeButton.classList.add('text-gray-500')
-          likeButton.classList.remove('text-red-500')
-        }
-      }
-    })
-    .catch((error) => {
-      console.error('Network error:', error)
-      // Revert on network error
-      likeCountSpan.textContent = currentCount
-      if (isCurrentlyLiked) {
-        heartIcon.className = 'fa-solid fa-heart text-red-500'
-        likeButton.classList.add('text-red-500')
-        likeButton.classList.remove('text-gray-500')
-      } else {
-        heartIcon.className = 'fa-regular fa-heart'
-        likeButton.classList.add('text-gray-500')
-        likeButton.classList.remove('text-red-500')
-      }
-    })
-    .finally(() => {
-      // Re-enable button
-      likeButton.classList.remove('processing')
-      likeButton.style.pointerEvents = 'auto'
-    })
-}
-
-// Initialize like functionality with event delegation
-function initializeLikeButtons() {
-  // console.log('Setting up like button listeners...')
-
-  // Use event delegation for dynamically loaded content
-  document.addEventListener('click', function (event) {
-    const likeButton = event.target.closest('.like-button')
-    if (!likeButton) return
-
-    event.preventDefault()
-    event.stopPropagation()
-
-    const postId = likeButton.dataset.postId
-    if (!postId) {
-      console.error('No post ID found on like button')
-      return
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    console.log(`Like button clicked for post ${postId}`)
-    handleLikeClick(postId, likeButton)
-  })
+    
+    const data = await response.json()
+    console.log('POST LIKE RESPONSE', data)
 
-  // console.log('Like button listeners ready!')
+    if (data.success) {
+      // Update UI with server response
+      updateLikeButtonUI(button, data.user_has_liked, data.new_like_count)
+
+      // Show success feedback (optional)
+      showFeedback(button, 'success')
+    } else {
+      throw new Error(data.error || 'Unknown error occurred')
+    }
+  } catch (error) {
+    console.error('Like toggle error:', error)
+
+    // Rollback optimistic update
+    heartIcon.className = originalHeartClass
+    button.className = originalButtonClass
+    likeCount.textContent = originalCount
+
+    // Show error feedback
+    showFeedback(button, 'error')
+
+    // User-friendly error message
+    if (error.name === 'AbortError') {
+      console.warn('Like request timed out')
+    } else {
+      console.warn('Failed to update like. Please try again.')
+    }
+  } finally {
+    // Remove from pending set
+    pendingLikes.delete(postId)
+  }
 }
 
-// Set up event listeners when DOM is loaded
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeLikeButtons)
-} else {
-  // DOM is already loaded
-  initializeLikeButtons()
+function updateLikeButtonUI(button, isLiked, count) {
+  const heartIcon = button.querySelector('i')
+  const likeCount = button.querySelector('.like-count')
+
+  if (isLiked) {
+    // User likes the post
+    heartIcon.className = 'fa-solid fa-heart text-red-500'
+    button.className = button.className.replace(
+      'text-gray-500 hover:text-red-500',
+      'text-red-500'
+    )
+  } else {
+    // User doesn't like the post
+    heartIcon.className = 'fa-regular fa-heart'
+    button.className = button.className.replace(
+      'text-red-500',
+      'text-gray-500 hover:text-red-500'
+    )
+  }
+
+  likeCount.textContent = count
 }
 
-// current setup uses event delegation.
-// Also initialize after dynamic content loads (for infinite scroll)
-// window.reinitializeLikeButtons = initializeLikeButtons;
+function showFeedback(button, type) {
+  // Add a subtle animation to show the action completed
+  const icon = button.querySelector('i')
 
-// -------------------------------------------------------------------
-// When you WOULD need window.reinitializeLikeButtons:
-// If you were using direct event binding instead:
-// -------------------------------------------------------------------
+  if (type === 'success') {
+    icon.style.transform = 'scale(1.2)'
+    setTimeout(() => {
+      icon.style.transform = 'scale(1)'
+    }, 150)
+  } else if (type === 'error') {
+    button.style.transform = 'translateX(-2px)'
+    setTimeout(() => {
+      button.style.transform = 'translateX(2px)'
+    }, 100)
+    setTimeout(() => {
+      button.style.transform = 'translateX(0)'
+    }, 200)
+  }
+}
 
-// This approach would need reinitialization
-// document.querySelectorAll('.like-button').forEach(button => {
-//     button.addEventListener('click', handleLikeClick);
-// });
-// New buttons loaded later wouldn't have listeners!
+function getCSRFToken() {
+  // Try hidden input first
+  const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]')
+  if (csrfInput) {
+    return csrfInput.value
+  }
+
+  // Fallback to cookie
+  const name = 'csrftoken'
+  let cookieValue = null
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';')
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim()
+      if (cookie.substring(0, name.length + 1) === name + '=') {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1))
+        break
+      }
+    }
+  }
+  return cookieValue
+}

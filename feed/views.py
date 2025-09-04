@@ -1,14 +1,18 @@
 # feed/views.py
+import time
+from django.views.decorators.cache import never_cache
+from django.core.cache import cache
+from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
 # import Model --> and helper functions
 from feed.models import AdImpression, create_ad_impression, update_ad_impression_duration
 from django.shortcuts import render, redirect
-from django.db.models import Count, Sum, Avg
+from django.db.models import Count, Sum, Avg, Q
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.contrib import messages
-from feed.models import Post, Advertisement, PostLike, process_user_interaction
+from feed.models import Post, Advertisement, PostLike
 from feed.utils_ads import track_ad_click
 from feed.utils_posts import\
     get_smart_posts_queryset, \
@@ -79,36 +83,78 @@ def public_posts(request):
 
 
 def load_more_posts(request):
-    """AJAX endpoint for loading more posts (ALL posts, not filtered)"""
+    """AJAX endpoint for loading more posts with debug timing"""
+    import time
+    start_time = time.time()
+    print(f"🚀 LOAD MORE POSTS STARTED - Page {request.GET.get('page', 1)}")
+
     if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'error': 'Invalid request'}, status=400)
 
     jwt_user = get_user_from_jwt(request)
     page_number = request.GET.get('page', 1)
+    # print(f"📊 Initial setup took: {(time.time() - start_time):.3f}s")
 
-    print('------- PAGE NUMBER ------')
-    print(page_number)
+    # In your load_more_posts function, replace the setup section with:
+    jwt_start = time.time()
+    jwt_user = get_user_from_jwt(request)
+    jwt_time = time.time() - jwt_start
+    print(f"📊 JWT processing took: {jwt_time:.3f}s")
 
-    logger.info(f"Load more posts: user={jwt_user}, page={page_number}")
+    page_start = time.time()
+    page_number = request.GET.get('page', 1)
+    page_time = time.time() - page_start
+    print(f"📊 Page number processing took: {page_time:.3f}s")
 
-    # Get ALL posts instead of smart filtering
+    print(f"📊 Initial setup took: {(time.time() - start_time):.3f}s")
+
+    # More detailed timing breakdown
+    query_start = time.time()
+
+    posts_queryset_start = time.time()
     posts = Post.objects.select_related('author').order_by('-created_at')
+    posts_queryset_time = time.time() - posts_queryset_start
+    print(f"📊 Posts queryset creation took: {posts_queryset_time:.3f}s")
 
+    paginator_start = time.time()
     paginator = Paginator(posts, 10)
-    page = paginator.get_page(page_number)
+    paginator_time = time.time() - paginator_start
+    print(f"📊 Paginator creation took: {paginator_time:.3f}s")
 
-    # Mix posts with advertisements
+    page_get_start = time.time()
+    page = paginator.get_page(page_number)
+    page_get_time = time.time() - page_get_start
+    print(f"📊 paginator.get_page() took: {page_get_time:.3f}s")
+
+    query_time = time.time() - query_start
+    print(f"📊 DATABASE QUERY (total) took: {query_time:.3f}s")
+
+    # Mix posts with advertisements timing
+    mix_start = time.time()
     mixed_items = mix_smart_posts_with_ads(
         page, jwt_user, posts_per_page=10, ads_frequency=10)
+    mix_time = time.time() - mix_start
+    print(f"📊 AD MIXING took: {mix_time:.3f}s")
 
-    # ADD USER LIKE STATUS - Same as in public_posts view
+    # User likes timing - OPTIMIZED VERSION
+    like_start = time.time()
     if jwt_user:
+        # Get only post IDs from current page
+        current_page_post_ids = []
+        for item in mixed_items:
+            if hasattr(item, 'id') and not hasattr(item, 'type'):
+                current_page_post_ids.append(item.id)
+
+        print(f"📊 Found {len(current_page_post_ids)} posts on current page")
+
+        # Only query likes for posts on current page
         user_liked_posts = set(PostLike.objects.filter(
-            user=jwt_user
+            user=jwt_user,
+            post_id__in=current_page_post_ids
         ).values_list('post_id', flat=True))
 
         for item in mixed_items:
-            if hasattr(item, 'id') and not hasattr(item, 'type'):  # It's a post, not an ad
+            if hasattr(item, 'id') and not hasattr(item, 'type'):
                 item.user_has_liked = item.id in user_liked_posts
             else:
                 item.user_has_liked = False
@@ -116,22 +162,48 @@ def load_more_posts(request):
         for item in mixed_items:
             item.user_has_liked = False
 
-    # Render mixed content HTML
+    like_time = time.time() - like_start
+    print(f"📊 USER LIKES QUERY took: {like_time:.3f}s")
+
+    # HTML rendering timing
+    render_start = time.time()
     posts_html = render_to_string('components/posts_list.html', {
         'items': mixed_items,
         'jwt_user': jwt_user
     })
+    render_time = time.time() - render_start
+    print(f"📊 HTML RENDERING took: {render_time:.3f}s")
 
-    # page.has_next()         # Returns True (step 1)
-    # page.next_page_number() # Returns 6 (step 2A - condition was True)
+    total_time = time.time() - start_time
+    print(f"📊 🏁 TOTAL TIME: {total_time:.3f}s")
+
+    if total_time > 2.0:
+        print(f"⚠️ ⚠️ ⚠️ SLOW REQUEST WARNING: {total_time:.3f}s")
+
+    middleware_time = total_time - \
+        (query_time + mix_time + like_time + render_time)
+    print(f"📊 🔍 UNACCOUNTED TIME: {middleware_time:.3f}s")
+
+    # Also check response size
+    response_size = len(posts_html)
+    print(
+        f"📊 Response HTML size: {response_size} characters ({response_size/1024:.1f}KB)")
 
     return JsonResponse({
         'html': posts_html,
         'has_next': page.has_next(),
-        #  "If there's a next page, get its number; otherwise, return None"
         'next_page': page.next_page_number() if page.has_next() else None,
         'current_page': page.number,
-        'total_pages': paginator.num_pages
+        'total_pages': paginator.num_pages,
+        # Always show debug timing for now since we need to diagnose
+        'debug_timing': {
+            'total_time': f"{total_time:.3f}s",
+            'query_time': f"{query_time:.3f}s",
+            'mix_time': f"{mix_time:.3f}s",
+            'like_time': f"{like_time:.3f}s",
+            'render_time': f"{render_time:.3f}s"
+        },
+        'debug_info': f"Total: {total_time:.3f}s, Query: {query_time:.3f}s, Mix: {mix_time:.3f}s, Likes: {like_time:.3f}s, Render: {render_time:.3f}s"
     })
 
 
@@ -278,12 +350,15 @@ def debug_targeting_view(request):
 # TOGGLE LIKE BUTTON
 # ==========================================================================
 
+# Optimized toggle_like view in feed/views.py
+# 
+@never_cache
 def toggle_like(request):
-    """AJAX endpoint to toggle post likes with PostLike tracking"""
+    start_time = time.time()
+
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    # Get user from JWT token
     jwt_user = get_user_from_jwt(request)
     if not jwt_user:
         return JsonResponse({'error': 'Authentication required'}, status=401)
@@ -295,54 +370,57 @@ def toggle_like(request):
         if not post_id:
             return JsonResponse({'error': 'Missing post_id'}, status=400)
 
-        # Get the post
-        try:
-            post = Post.objects.get(id=post_id)
-        except Post.DoesNotExist:
-            return JsonResponse({'error': 'Post not found'}, status=404)
+        # Single atomic transaction with minimal queries
+        with transaction.atomic():
+            # Get post and existing like in one go using select_related
+            try:
+                post = Post.objects.select_for_update().get(id=post_id)
+            except Post.DoesNotExist:
+                return JsonResponse({'error': 'Post not found'}, status=404)
 
-        # Check if user already liked this post
-        existing_like = PostLike.objects.filter(
-            user=jwt_user, post=post).first()
+            # Check existing like - but get the object, not just exists()
+            existing_like = PostLike.objects.filter(
+                user=jwt_user,
+                post=post
+            ).first()  # More efficient than exists() + separate delete query
 
-        if existing_like:
-            # User already liked - so unlike it
-            existing_like.delete()
-            post.likes = max(0, post.likes - 1)  # Prevent negative likes
-            post.save()
+            if existing_like:
+                # Unlike: delete the existing like object
+                existing_like.delete()
+                post.likes = max(0, post.likes - 1)
+                action = 'unliked'
+                new_liked_status = False
+            else:
+                # Like: create new like (using create instead of get_or_create)
+                PostLike.objects.create(user=jwt_user, post=post)
+                post.likes += 1
+                action = 'liked'
+                new_liked_status = True
 
-            # Update user interests (unlike action)
-            process_user_interaction(jwt_user, post, 'unlike')
+            # Save post with minimal fields
+            post.save(update_fields=['likes'])
 
-            return JsonResponse({
-                'success': True,
-                'action': 'unliked',
-                'new_like_count': post.likes,
-                'user_has_liked': False
-            })
-        else:
-            # User hasn't liked - so like it
-            PostLike.objects.create(user=jwt_user, post=post)
-            post.likes += 1
-            post.save()
+        end_time = time.time()
+        execution_time = end_time - start_time
 
-            # Update user interests (like action)
-            process_user_interaction(jwt_user, post, 'like')
-
-            return JsonResponse({
-                'success': True,
-                'action': 'liked',
-                'new_like_count': post.likes,
-                'user_has_liked': True
-            })
+        return JsonResponse({
+            'success': True,
+            'action': action,
+            'new_like_count': post.likes,
+            'user_has_liked': new_liked_status,
+            'execution_time': execution_time,
+        })
 
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
         logger.error(f"Error in toggle_like: {e}")
-        return JsonResponse({'error': 'Internal server error'}, status=500)
-
-
+        end_time = time.time()
+        execution_time = end_time - start_time
+        return JsonResponse({
+            'error': 'Internal server error',
+            'execution_time': execution_time
+        }, status=500)
 # ==========================================================================
 # AD TRACKING VIEWS
 # ==========================================================================

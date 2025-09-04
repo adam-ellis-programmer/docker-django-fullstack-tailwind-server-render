@@ -100,18 +100,22 @@ if DEV:
     }
 else:
     # Production database (Supabase PostgreSQL)
-    DATABASES = {
+    # Production database (Supabase PostgreSQL - Session Pooler)
+   DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': 'postgres',
             'USER': 'postgres.suohkdsthwxfacjmsgde',
-            'PASSWORD': 'zG33zry0RaAmpVKX',  # This MUST be set
+            'PASSWORD': 'zG33zry0RaAmpVKX',
             'HOST': 'aws-1-eu-west-2.pooler.supabase.com',
             'PORT': '5432',
+            'CONN_MAX_AGE': 300,  # Keep connections alive 5 minutes
+            'CONN_HEALTH_CHECKS': True,
             'OPTIONS': {
                 'sslmode': 'require',
+                'connect_timeout': 5,  # This one works
             },
-        },
+        }
     }
 
 

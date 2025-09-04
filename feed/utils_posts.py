@@ -8,7 +8,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-
 def shuffle_posts_by_relevance(posts_queryset):
     """
     Shuffle posts while maintaining relevance groupings
@@ -197,7 +196,7 @@ def mix_smart_posts_with_ads(posts_queryset, user=None, posts_per_page=10, ads_f
 
     # Get user interests for ad targeting
     user_interests = get_user_interests(user, min_score=1.0, limit=10)
-    logger.info(f"Found {user_interests.count()} user interests for ads")
+    logger.info(f"Found {len(user_interests)} user interests for ads")
 
     ads_inserted = 0
     for i, post in enumerate(posts_list):

@@ -20,12 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-*6f3gylmc4(9u0(m4)a+bf^we_o$j^j&gltn25omewm=h(h2ro'
+SECRET_KEY = os.environ.get('SECERET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -85,6 +83,11 @@ print('----------------------- test value --------------')
 print(os.environ.get('TEST'))
 
 DEV = False
+DB_USER = os.environ.get('DB_USER')
+DB_PASS = os.environ.get('DB_PASS')
+DB_HOST = os.environ.get('DB_HOST')
+DB_PORT = os.environ.get('DB_PORT')
+
 
 if DEV:
     # Local development database (Docker)
@@ -101,14 +104,14 @@ if DEV:
 else:
     # Production database (Supabase PostgreSQL)
     # Production database (Supabase PostgreSQL - Session Pooler)
-   DATABASES = {
+    DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': 'postgres',
-            'USER': 'postgres.suohkdsthwxfacjmsgde',
-            'PASSWORD': 'zG33zry0RaAmpVKX',
-            'HOST': 'aws-1-eu-west-2.pooler.supabase.com',
-            'PORT': '5432',
+            'USER': DB_USER,
+            'PASSWORD': DB_PASS,
+            'HOST': DB_HOST,
+            'PORT': DB_PORT,
             'CONN_MAX_AGE': 300,  # Keep connections alive 5 minutes
             'CONN_HEALTH_CHECKS': True,
             'OPTIONS': {
@@ -125,6 +128,7 @@ if not DEV:
         'localhost',        # ← Add this for local testing
         '127.0.0.1',       # ← Add this too
         'your-domain.com',  # Replace with your actual domain
+        '*.up.railway.app',
         '.supabase.co',     # Allow Supabase subdomains
     ]
 

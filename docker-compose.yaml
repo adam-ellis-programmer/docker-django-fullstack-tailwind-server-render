@@ -21,11 +21,12 @@ services:
     depends_on:
       - db
     environment:
-      - DEBUG=1
-      - TEST=Adam
-      - DATABASE_URL=postgres://feeduser:feedpass@db:5432/feedapp
-      - DB_PASSWORD=Adam1234
-      - DEV=true
+      - DEBUG=False
+      - DB_USER=postgres.suohkdsthwxfacjmsgde
+      - DB_PASS=zG33zry0RaAmpVKX
+      - DB_HOST=aws-1-eu-west-2.pooler.supabase.com
+      - DB_PORT=5432
+      - SECERET_KEY=django-insecure-*6f3gylmc4(9u0(m4)a+bf^we_o$j^j&gltn25omewm=h(h2ro
 
   tailwind:
     image: node:18-alpine

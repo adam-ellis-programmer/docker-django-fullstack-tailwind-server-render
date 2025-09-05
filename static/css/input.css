@@ -2,9 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-
-.test{
-    background-color: red;
-    padding: 4rem;
-    
+.test {
+  background-color: rgb(33, 84, 129);
+  padding: 4rem;
 }
